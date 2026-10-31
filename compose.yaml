@@ -1,0 +1,99 @@
+# All configurable values live here. Shell environment overrides .env, then defaults.
+# Defaults are for local development only; use compose.production.yaml in production.
+x-settings:
+  project-name: &project-name ${COMPOSE_PROJECT_NAME:-twenty-autonomus-company}
+  twenty-image: &twenty-image twentycrm/twenty:${TAG:-v2.54.0}
+  postgres-image: &postgres-image ${POSTGRES_IMAGE:-postgres:16}
+  redis-image: &redis-image ${REDIS_IMAGE:-redis:7-alpine}
+  http-port: &http-port ${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-3000}:3000
+  postgres-port: &postgres-port ${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
+  database: &database
+    POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
+    POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+    POSTGRES_DB: ${PG_DATABASE_NAME:-default}
+    DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@lvh.me}
+    DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-LocalTwentyAdmin2026}
+  twenty-environment: &twenty-environment
+    NODE_PORT: "3000"
+    SERVER_URL: ${SERVER_URL:-http://localhost:${HTTP_PORT:-3000}}
+    PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+    REDIS_URL: redis://redis:6379
+    STORAGE_TYPE: local
+    # Public, disposable LOCAL key (32 bytes). Replace for any real deployment.
+    ENCRYPTION_KEY: ${ENCRYPTION_KEY:-bG9jYWwtdHdlbnR5LW9ubHktZG8tbm90LXVzZS1wcm8=}
+    FALLBACK_ENCRYPTION_KEY: ${FALLBACK_ENCRYPTION_KEY:-}
+    APP_SECRET: ${APP_SECRET:-}
+    IS_CONFIG_VARIABLES_IN_DB_ENABLED: ${IS_CONFIG_VARIABLES_IN_DB_ENABLED:-false}
+    DEFAULT_SUBDOMAIN: ${DEFAULT_SUBDOMAIN:-app}
+    IS_MULTIWORKSPACE_ENABLED: ${IS_MULTIWORKSPACE_ENABLED:-false}
+
+name: *project-name
+
+services:
+  server:
+    image: *twenty-image
+    environment:
+      <<: *twenty-environment
+    ports:
+      - *http-port
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  worker:
+    image: *twenty-image
+    command: ["yarn", "worker:prod"]
+    environment:
+      <<: *twenty-environment
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+    depends_on:
+      server:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: *postgres-image
+    environment: *database
+    ports:
+      - *postgres-port
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./entrypoint-initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -h localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: *redis-image
+    command: ["redis-server", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  server-local-data:
