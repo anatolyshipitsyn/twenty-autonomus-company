@@ -7954,7 +7954,7 @@ COPY core."usageLimit" ("workspaceId", id, "resourceType", "operationType", "spe
 --
 
 COPY core."user" (id, "firstName", "lastName", email, "isEmailVerified", disabled, "passwordHash", "canImpersonate", "canAccessFullAdminPanel", "createdAt", "updatedAt", "deletedAt", locale) FROM stdin;
-2681c8fe-032e-4085-b156-231aba4aa04c	Local	Admin	admin@example.com	f	f	$2a$10$D2uDgw3jS6OvkITBsxEeBOrywYmRDNnc0KgbRnDlj7xmRrmKHNwtG	t	t	2026-10-31 12:35:47.871989+00	2026-10-31 12:35:47.871989+00	\N	ru-RU
+2681c8fe-032e-4085-b156-231aba4aa04c	Local	Admin	admin@lvh.me	f	f	$2a$10$D2uDgw3jS6OvkITBsxEeBOrywYmRDNnc0KgbRnDlj7xmRrmKHNwtG	t	t	2026-10-31 12:35:47.871989+00	2026-10-31 12:35:47.871989+00	\N	ru-RU
 \.
 
 
@@ -8924,7 +8924,7 @@ COPY workspace_7249nh2dhrl2ca1lcdcu82f2c."workflowVersion" (id, "createdAt", "up
 --
 
 COPY workspace_7249nh2dhrl2ca1lcdcu82f2c."workspaceMember" (id, "createdAt", "updatedAt", "deletedAt", "position", "nameFirstName", "nameLastName", "colorScheme", "uiScale", "openRecordIn", locale, "avatarUrl", "userEmail", "jobTitle", "calendarStartDay", "userId", "timeZone", "dateFormat", "timeFormat", "numberFormat", "createdBySource", "createdByWorkspaceMemberId", "createdByName", "createdByContext", "updatedBySource", "updatedByWorkspaceMemberId", "updatedByName", "updatedByContext") FROM stdin;
-48cc4cfc-e711-45c1-809e-bb4e54fc5508	2026-10-31 12:36:03.480665+00	2026-10-31 12:45:14.686397+00	\N	0	Local	Admin	System	Default	RECORD_PAGE	ru-RU	\N	admin@example.com	\N	7	2681c8fe-032e-4085-b156-231aba4aa04c	system	SYSTEM	SYSTEM	SYSTEM	MANUAL	\N	System	\N	MANUAL	\N	System	\N
+48cc4cfc-e711-45c1-809e-bb4e54fc5508	2026-10-31 12:36:03.480665+00	2026-10-31 12:45:14.686397+00	\N	0	Local	Admin	System	Default	RECORD_PAGE	ru-RU	\N	admin@lvh.me	\N	7	2681c8fe-032e-4085-b156-231aba4aa04c	system	SYSTEM	SYSTEM	SYSTEM	MANUAL	\N	System	\N	MANUAL	\N	System	\N
 \.
 
 
