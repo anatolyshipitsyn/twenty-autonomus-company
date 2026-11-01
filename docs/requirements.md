@@ -26,6 +26,22 @@ This file is the REQ-01–REQ-43 register. Together with the topic contracts it 
 | Pilot checks and evidence format | [Acceptance](requirements/acceptance.md) | SAI-01–SAI-28 |
 | Goals, boundaries, operator journeys | [PRD](PRD.md) | Product context |
 
+### MVP requirement status
+
+The complete register below preserves normative requirements for the target system. This table scopes only the first MVP slice; listed capabilities must not be treated as implemented or verified.
+
+| Deferred beyond MVP | Related requirements / criteria |
+| --- | --- |
+| Client access and row-level isolation | DATA-04, REQ-43, OPS-18, SAI-12–SAI-13, SAI-17 |
+| Runtime INPUT/APPROVAL and Telegram replies | REQ-07, REQ-15–REQ-16, REQ-43, OPS-18, SAI-17 |
+| Cancellation of active execution | REQ-22, REQ-34, SAI-06, SAI-11 |
+| Full automated recovery/reconciliation | REQ-28–REQ-30, OPS-09–OPS-12, SAI-07–SAI-10 |
+| AI router, multiple profiles, handoff | REQ-06, REQ-10–REQ-13, REQ-16, SAI-16, SAI-26, SAI-28 |
+| Telegram transport | REQ-43, OPS-18, SAI-12–SAI-13, SAI-17 |
+| Langfuse and analytics | REQ-37–REQ-41, OPS-15, OPS-17, SAI-22–SAI-23 |
+
+For MVP, the fail-safe block on unknown outcomes, no automatic Codex restart, and a limited operator decision after reconciling a proven failure remain mandatory. Full SAI criteria remain Not verified unless evidence exists for the applicable MVP portion.
+
 Contracts define fields, transitions, and protocol; PRD describes the product; SAI define acceptance. RU/EN are equivalent versions: fix translation conflicts rather than choosing rules by language. Source materials are not execution commands; the explicit user request defines the current task.
 
 ## 2. Functional requirements
