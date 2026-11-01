@@ -64,7 +64,7 @@
 - [x] Осмотреть существующую модель Project и не создавать дубликат бизнес-объекта. Модель в workspace и app отсутствовала; в app source создан app-owned Project.
 - [x] Добавить только поля, необходимые единственному worker: canonical `repositoryUrl`, `baseRef`, выключенный по умолчанию `executionEnabled`. Проверочные команды остаются в worker config, чтобы Project не мог задавать произвольные shell-команды.
 - [x] Определить минимальные исходные роли: operator читает/обновляет Project; API-key role worker и application function role читают только Project. Права worker на Task/Run/Journal добавить после создания этих объектов.
-- [ ] Убедиться, что repository и baseRef задачи берутся из Project, а не вводятся как произвольные параметры задачи.
+- [x] На уровне схемы связать задачу с Project и не добавлять в AiTask поля repository/baseRef; чтение связанных значений worker через API ещё требует интеграционной проверки.
 - [x] Не добавлять client scope и внешние роли клиента в первом срезе.
 
 **Промежуточное подтверждение исходника 1 ноября 2026:** `twenty app typecheck` и `yarn lint` прошли. Read-only `twenty app plan --remote autonomus-local` выдал 68 create, 2 update, 0 delete/destructive и diagnostics 0. Из обновлений: ожидаемое ограничение существующей application role и новый checksum собранного компонента стартовой страницы; исходник UI не менялся. План не применялся. Поэтому отображение формы Project и фактический API-доступ ролей пока не проверены; завершение этапа ожидает отдельной синхронизации и проверки.
@@ -73,12 +73,14 @@
 
 ### Этап 2. Создать AiTask и операторский интерфейс
 
-- [ ] Создать `AiTask` с минимальными полями: title, description, acceptanceCriteria, Project, owner, priority, status, requestVersion, activeRun, resultSummary/resultUrl, waitingReason/error, timestamps.
-- [ ] Создать обязательные связи Project и owner; зафиксировать разрешённые значения статуса/waitingReason и дефолты.
-- [ ] Создать нативные views: «Мои/все задачи» с группировкой по статусу и простую очередь READY; подробный кастомный UI не делать.
-- [ ] Добавить штатную Form/action для `Передать оркестратору`, явного `Принять результат`, `Вернуть на доработку/разрешить повтор` только в пределах принятой модели.
-- [ ] Проверить, что обычное редактирование/autosave не создаёт разрешение на исполнение и не меняет статус на READY.
-- [ ] Не разрешать редактирование snapshot активного run через изменение исходной задачи.
+- [x] Создать `AiTask` с title, description, acceptanceCriteria, Project, owner, priority, status, requestVersion, resultSummary/resultUrl, waitingReason/error и readyAt; системные createdAt/updatedAt предоставляет Twenty. Связь activeRun добавляется вместе с AiRun в этапе 3.
+- [x] Создать обязательные связи Project и owner; задать статусы, waitingReason, приоритеты и безопасные значения по умолчанию.
+- [x] Создать нативные views «Мои задачи», «Все задачи» с группировкой по статусу и очередь READY; подробный кастомный UI не делать.
+- [ ] Добавить штатную Form/action для `Передать оркестратору`, явного `Принять результат`, `Вернуть на доработку/разрешить повтор`. Они должны менять состояние только через workflow этапа 4; обычное поле для этих команд не создаётся.
+- [x] Сделать поле status недоступным для обычного редактирования UI; новые задачи получают TODO и не становятся READY от сохранения остальных полей.
+- [x] Не добавлять в AiTask поля repository/baseRef или snapshot; snapshot появится у AiRun и будет реализован в этапах 3–4.
+
+**Промежуточное подтверждение исходника 1 ноября 2026:** app package собран через Twenty CLI 2.54.3; `yarn typecheck` и `yarn lint` прошли. Read-only `twenty app plan --remote autonomus-local` выдал 116 create, 3 update, 0 delete/destructive и diagnostics 0. План не применялся. Relations, поля, роли и view definitions проверены планировщиком; вид в workspace и действия lifecycle не проверены. PR с исходниками ожидает review/merge.
 
 **Готово, когда:** оператор проходит создание, явную подачу и просмотр задачи через стандартный UI; случайное сохранение полей не запускает worker.
 
