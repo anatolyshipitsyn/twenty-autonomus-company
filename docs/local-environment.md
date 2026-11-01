@@ -18,7 +18,7 @@ This Compose stack does not start the orchestrator worker or Codex App Server. T
 ## Behavior and limits
 
 - `IS_MULTIWORKSPACE_ENABLED` defaults to `false`; registration remains limited to the configured local workspace behavior.
-- The upstream image is pinned by `TAG` (default `v2.53.1`). Recheck compatibility before changing the pinned version.
+- The upstream image is pinned by `TAG` (default `v2.54.0`). Recheck compatibility before changing the pinned version.
 - The Compose healthcheck covers the server endpoint. It does not verify account creation or workspace setup.
 - Keep `.env` private; it may contain API credentials and local secrets.
 
