@@ -1,6 +1,6 @@
 # Working in this repository
 
-This repository specifies an AI orchestrator: Twenty Workflows own business state; a NestJS worker will execute commands through Codex app-server in a later stage. The official Twenty Agent Skills are installed under `.agents/skills/`. Check the current tree before choosing commands: this checkout may not contain the private Twenty App package, and no NestJS worker toolchain is defined yet.
+This repository specifies an AI orchestrator: Twenty Workflows own business state; the selected execution architecture is a NestJS worker controlling Codex App Server over its version-pinned JSON-RPC protocol. The worker is a target design and is not implemented in this checkout yet. The official Twenty Agent Skills are installed under `.agents/skills/`. Check the current tree before choosing commands: this checkout may not contain the private Twenty App package, and no NestJS worker toolchain is defined yet.
 
 ## Twenty Agent Skills and local server
 
