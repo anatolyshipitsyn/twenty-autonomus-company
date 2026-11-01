@@ -1,6 +1,7 @@
 import { defineRole } from 'twenty-sdk/define';
 
 import {
+  AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
   ORCHESTRATOR_WORKER_ROLE_UNIVERSAL_IDENTIFIER,
   PROJECT_OBJECT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -8,7 +9,7 @@ import {
 export default defineRole({
   universalIdentifier: ORCHESTRATOR_WORKER_ROLE_UNIVERSAL_IDENTIFIER,
   label: 'Orchestrator Worker',
-  description: 'Can read the approved Project repository configuration.',
+  description: 'Can read approved Project configuration and AI Tasks.',
   canUpdateAllSettings: false,
   canAccessAllTools: false,
   canAccessAllAgentChatChannels: false,
@@ -22,6 +23,13 @@ export default defineRole({
   objectPermissions: [
     {
       objectUniversalIdentifier: PROJECT_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
       canReadObjectRecords: true,
       canUpdateObjectRecords: false,
       canSoftDeleteObjectRecords: false,
