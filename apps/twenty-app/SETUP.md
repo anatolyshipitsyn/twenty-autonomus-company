@@ -8,7 +8,7 @@
 
 ## Установка и подключение
 
-Из каталога приложения:
+Для запуска watcher через Compose хостовая установка CLI и CLI-аутентификация не нужны. Для запуска CLI-команд непосредственно на хосте:
 
 ```bash
 nvm install
@@ -20,23 +20,22 @@ twenty auth login --url http://localhost:3000 --name autonomus-local
 
 If `twenty` is not found after installation, make sure the active Node version's global npm `bin` directory is in `PATH`; switching to the app's `.nvmrc` with `nvm use` normally does this.
 
-Вход сохраняет remote `autonomus-local` в пользовательской конфигурации CLI. Команды ниже указывают remote явно, чтобы не зависеть от выбранного по умолчанию.
+Эти команды сохраняют remote `autonomus-local` в пользовательской конфигурации CLI и нужны только для ручных команд Twenty на хосте.
 
 ## Синхронизация с локальным workspace
 
-Первую установку выполняют так:
+Корневой Compose поднимет Twenty и контейнер `app-dev`, который установит зависимости, войдёт как локальный администратор и запустит watcher:
 
 ```bash
-twenty app apply --create --remote autonomus-local
+docker compose up -d --wait
+docker compose logs -f app-dev
 ```
 
-После изменений исходников синхронизируйте приложение командой:
+Контейнер монтирует исходники `apps/twenty-app`, поэтому изменения файлов синхронизируются с Twenty без пересборки образа сервера. Для входа он использует `DEFAULT_ADMIN_EMAIL` и `DEFAULT_ADMIN_PASSWORD` из корневого `.env` (либо значения по умолчанию из Compose). На пустом томе базы те же значения устанавливает init-скрипт. Поэтому после `docker compose down -v` новый workspace и watcher снова поднимутся без сохранённой OAuth-сессии. Контейнер автоматически перезапускает watcher перед истечением access token и получает новый.
 
-```bash
-twenty app apply --remote autonomus-local
-```
+Watcher запускается с `--no-prune`, чтобы удаление определения из исходников само по себе не удаляло его из workspace. Не запускайте параллельно отдельный `twenty app apply`. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации.
 
-Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации. Для синхронизации не используйте `twenty app dev`.
+`app-dev` получает свежий токен при каждом старте. Если вход не проходит, проверьте, что email и пароль в `.env` совпадают с учётной записью локального администратора. После смены пароля в уже созданном workspace измените `DEFAULT_ADMIN_PASSWORD` в `.env` на тот же пароль и пересоздайте `app-dev`.
 
 ## Проверки
 

@@ -69,6 +69,28 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  app-dev:
+    build:
+      context: ./apps/twenty-app
+      dockerfile: Dockerfile.dev
+    network_mode: service:server
+    command:
+      - sh
+      - -lc
+      - yarn install --immutable && exec yarn twenty app dev --create --remote autonomus-local --no-prune
+    environment:
+      TWENTY_SERVER_URL: http://server:3000
+      TWENTY_AUTH_ORIGIN: ${SERVER_URL:-http://localhost:${HTTP_PORT:-3000}}
+      TWENTY_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@lvh.me}
+      TWENTY_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-LocalTwentyAdmin2026}
+    volumes:
+      - ./apps/twenty-app:/workspace/app
+      - app-dev-node-modules:/workspace/app/node_modules
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: *postgres-image
     environment: *database
@@ -97,3 +119,4 @@ services:
 volumes:
   db-data:
   server-local-data:
+  app-dev-node-modules:

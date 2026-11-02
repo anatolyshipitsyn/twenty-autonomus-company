@@ -10,4 +10,4 @@
 
 ## Синхронизация
 
-Используйте `twenty app apply --remote autonomus-local` после изменений. Первую установку выполняют с флагом `--create`; не используйте watch mode.
+Корневой `docker compose up` автоматически запускает watcher с `--create` для первой регистрации и `--no-prune`, чтобы не удалять определения из workspace при их отсутствии в исходниках. Ручную одноразовую синхронизацию выполняют через `twenty app apply --remote autonomus-local`.
