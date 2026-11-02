@@ -69,6 +69,8 @@
 
 **Промежуточное подтверждение исходника 1 ноября 2026:** `twenty app typecheck` и `yarn lint` прошли. Read-only `twenty app plan --remote autonomus-local` выдал 68 create, 2 update, 0 delete/destructive и diagnostics 0. Из обновлений: ожидаемое ограничение существующей application role и новый checksum собранного компонента стартовой страницы; исходник UI не менялся. План не применялся. Поэтому отображение формы Project и фактический API-доступ ролей пока не проверены; завершение этапа ожидает отдельной синхронизации и проверки.
 
+**Подтверждение 2 ноября 2026:** локальный `app-dev` watcher синхронизировал app. Read-only `twenty app plan --remote autonomus-local --json` завершился без ошибок: 0 ожидающих create/update/delete и diagnostics 0. В UI видны AI Tasks и список задач с Title/Status/Priority/Project; API-доступ worker по-прежнему требует интеграционной проверки.
+
 **Готово, когда:** оператор видит и меняет разрешённую конфигурацию Project; задача не может указать произвольный репозиторий; worker может прочитать разрешённые данные через поддерживаемый API.
 
 ### Этап 2. Создать AiTask и операторский интерфейс
@@ -82,16 +84,20 @@
 
 **Промежуточное подтверждение исходника 1 ноября 2026:** app package собран через Twenty CLI 2.54.3; `yarn typecheck` и `yarn lint` прошли. Read-only `twenty app plan --remote autonomus-local` выдал 116 create, 3 update, 0 delete/destructive и diagnostics 0. План не применялся. Relations, поля, роли и view definitions проверены планировщиком; вид в workspace и действия lifecycle не проверены. PR с исходниками ожидает review/merge.
 
+**Подтверждение 2 ноября 2026:** `twenty app typecheck` и `yarn lint` прошли; watcher синхронизировал манифест, а последующий read-only план показал 0 ожидающих действий и diagnostics 0. В интерфейсе доступен список AI Tasks и создание записи. Переходы submit/accept/rework остаются за Workflows этапа 4; UI-поведение фильтров My/READY и доступ оператора к выбору owner требуют отдельной проверки.
+
 **Готово, когда:** оператор проходит создание, явную подачу и просмотр задачи через стандартный UI; случайное сохранение полей не запускает worker.
 
 ### Этап 3. Создать AiRun и AiRunJournal
 
-- [ ] Создать `AiRun` с task, requestVersion, уникальным runKey, status, threadId/turnId, profile key, snapshot, итогом, ссылкой/идентификатором PR и временными полями, которые нужны worker и оператору.
-- [ ] Создать `AiRunJournal` с уникальным operationKey, runKey/task/run, direction/type/state, payload без секретов, результатом и timestamps.
-- [ ] Добавить уникальные индексы на runKey и operationKey; подтвердить фактическое поведение конфликтов/Upsert выбранного API.
-- [ ] Ограничить права: Journal доступен оператору и worker по назначению; пользовательские поля не содержат secrets, tool logs или локальных путей.
-- [ ] Сохранить минимальный неизменяемый input snapshot до старта: задача/критерии, Project/repository/base commit, профиль/политика и protocol/config references.
-- [ ] Проверить повторную доставку одного operationKey и запрет перезаписи APPLIED/терминальных записей.
+- [x] Создать `AiRun` со связью task, requestVersion, уникальным runKey, status, threadId/turnId, profile key, snapshot, итогом, evidence, PR URL/headCommit и временными полями.
+- [x] Создать `AiRunJournal` с уникальным operationKey, runKey, связями task/run, direction/type/state, payload/result и timestamps.
+- [x] Добавить уникальные индексы на runKey и operationKey. Фактическое поведение конфликта/Upsert выбранного API ещё не проверено.
+- [x] Ограничить object permissions для operator/worker и запретить изменять ключи, snapshot, ссылки и содержимое журнала обычными/API ролями. Worker пишет новые Journal records; workflow-переход состояния пока не реализован.
+- [x] Добавить snapshot, предназначенный для задачи/критериев, Project/repository/base commit, profile/policy и protocol/config references; описания запрещают помещать в него secrets, tool logs и локальные пути.
+- [ ] Интеграционно проверить повторную доставку одного operationKey, конфликт payload и запрет перезаписи APPLIED/терминальных записей.
+
+**Подтверждение исходника 2 ноября 2026:** `AiTask` и его прежние поля/relations/views/page layout сохранены по ID локального workspace (`729e12b4-81f5-4e3e-b379-98e33bffdb23`); Run и Journal ссылаются на эту модель. Read-only `twenty app plan --remote autonomus-local --json` теперь показывает 0 create/update/delete/destructive и diagnostics 0, то есть app manifest соответствует workspace. `twenty app typecheck` и `yarn lint` прошли. В навигации UI видна папка Execution. Поведение уникальных конфликтов/Upsert, повторная доставка, несовпадающий payload, ограничения API-key и терминальные обновления остаются Not verified до интеграционной проверки.
 
 **Готово, когда:** по записям можно однозначно связать задачу, попытку и команду/событие; повторная доставка не запускает действие второй раз, а конфликт payload выявляется.
 

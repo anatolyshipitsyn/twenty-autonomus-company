@@ -1,10 +1,9 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: 'da6e7bb1-092a-4a6a-a4a3-ce8333e56aa9',
+  universalIdentifier: 'aa27e034-c483-427f-994b-ff205b6e019b',
   name: 'description',
   label: 'Description',
-  type: FieldType.RICH_TEXT,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
-  description: 'Task instructions',
+  type: FieldType.TEXT,
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

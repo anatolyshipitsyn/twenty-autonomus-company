@@ -1,38 +1,38 @@
 import { definePageLayout, PageLayoutTabLayoutMode, PageLayoutType } from 'twenty-sdk/define';
 
 export default definePageLayout({
-  universalIdentifier: '1023b843-1f7a-4791-8520-3f927e41ab56',
+  universalIdentifier: '2e87453f-b4fc-49bb-954c-a887421fea58',
   name: 'Default Ai task Layout',
   type: PageLayoutType.RECORD_PAGE,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
   tabs: [
     {
-      universalIdentifier: '0d063a23-ca4c-44e8-8272-a27a4b3bdbba',
+      universalIdentifier: '7663fcf8-5c86-4060-a46c-cee5b5ecdc6e',
       title: 'Home',
       position: 10,
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
-          universalIdentifier: '78a854d5-48ce-4602-a088-047601a996b8',
+          universalIdentifier: '1e090ddd-3104-4071-9b05-940500593a38',
           title: 'Fields',
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewUniversalIdentifier: 'e679e8e0-7ca1-4cd0-b0bc-c5c7bdf47008',
+            viewUniversalIdentifier: 'ff1c4cb3-4e7d-422b-80e7-0ff16cad38c6',
           },
         },
       ],
     },
     {
-      universalIdentifier: '89ac4b4b-0cd9-4973-b75e-77e662618565',
+      universalIdentifier: '9a8ea2d5-218d-4897-bf3d-36d3bca9920c',
       title: 'Timeline',
       position: 20,
       icon: 'IconTimelineEvent',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
-          universalIdentifier: 'a681a25b-7b54-43fe-bc60-7b46407a43fc',
+          universalIdentifier: 'ccb3f193-e03a-4453-979b-62d1663b5d01',
           title: 'Timeline',
           type: 'TIMELINE',
           configuration: {

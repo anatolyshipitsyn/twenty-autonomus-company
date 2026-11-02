@@ -1,10 +1,9 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: '1959dba2-cd63-4eb5-9d9b-72d521d1b514',
+  universalIdentifier: 'd5b25c17-6e41-442e-9e66-b92718046eca',
   name: 'acceptanceCriteria',
-  label: 'Acceptance criteria',
-  type: FieldType.RICH_TEXT,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
-  description: 'Conditions that define successful completion',
+  label: 'Acceptance Criteria',
+  type: FieldType.TEXT,
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

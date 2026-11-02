@@ -1,22 +1,39 @@
 import { defineView, ViewFilterOperand } from 'twenty-sdk/define';
 
 export default defineView({
-  universalIdentifier: '2cb26502-e03a-4501-8bff-c5128d707ee4',
+  universalIdentifier: 'e4a11a8d-ce3b-4f2a-a5e4-458c3a4a8f9f',
   name: 'ready-ai-tasks',
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
   type: 'TABLE',
   icon: 'IconPlayerPlay',
-  position: 2,
+  position: 1,
   fields: [
-    { universalIdentifier: '0d2e38cd-d510-4794-9f6e-6126ba5391c7', fieldMetadataUniversalIdentifier: 'f7038bd4-3b13-43fd-b3dd-82a785681130', position: 0, isVisible: true, size: 200 },
-    { universalIdentifier: '3114041e-8ec4-4f55-8c0d-25ef82495598', fieldMetadataUniversalIdentifier: '9cc55d6e-85b2-4712-b54f-f176c77278e0', position: 1, isVisible: true, size: 140 },
-    { universalIdentifier: 'fbeb6e9a-b96c-4631-b429-23d0a84afa72', fieldMetadataUniversalIdentifier: 'a81cdb79-10fa-42e0-9d05-462cf7f47338', position: 2, isVisible: true, size: 140 },
-    { universalIdentifier: '1848c07c-d320-4ade-b630-7c3acbed2792', fieldMetadataUniversalIdentifier: '572cf480-7281-49ea-9b7f-d4758bab42c5', position: 3, isVisible: true, size: 180 },
+    {
+      universalIdentifier: '7e943484-d743-4ef8-9dc7-21485184a9ab',
+      fieldMetadataUniversalIdentifier: '5e74303b-ebd2-4d8b-ab81-f66d84f65e73',
+      position: 0,
+      isVisible: true,
+      size: 240,
+    },
+    {
+      universalIdentifier: '0ad34e58-d8e9-4d4a-98d6-068c47c41ca3',
+      fieldMetadataUniversalIdentifier: '3cc26611-c9cc-47ec-9a9b-6b0301ef0814',
+      position: 1,
+      isVisible: true,
+      size: 130,
+    },
+    {
+      universalIdentifier: '0f86c1d8-d06e-48f9-a748-9809ed714bdf',
+      fieldMetadataUniversalIdentifier: 'b2cb81d7-4c77-41da-bab8-e7342d8063e2',
+      position: 2,
+      isVisible: true,
+      size: 200,
+    },
   ],
   filters: [
     {
-      universalIdentifier: 'e78af774-fbf9-46a6-9298-327a7d9181e3',
-      fieldMetadataUniversalIdentifier: '9cc55d6e-85b2-4712-b54f-f176c77278e0',
+      universalIdentifier: 'fb0c180d-975f-4ce7-a170-a2692345c9d2',
+      fieldMetadataUniversalIdentifier: '28f8a0f4-0c44-4750-8261-280ba2a3993f',
       operand: ViewFilterOperand.IS,
       value: ['READY'],
     },

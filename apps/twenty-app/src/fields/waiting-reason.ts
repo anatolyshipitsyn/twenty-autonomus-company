@@ -1,16 +1,9 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: 'b6e66160-54e5-427c-bafc-bc81e8cf4238',
+  universalIdentifier: 'a1addd81-7e30-40b9-8f40-382c102fb944',
   name: 'waitingReason',
-  label: 'Waiting reason',
-  type: FieldType.SELECT,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
-  options: [
-    { position: 0, label: 'Input', value: 'INPUT', color: 'sky' },
-    { position: 1, label: 'Approval', value: 'APPROVAL', color: 'orange' },
-    { position: 2, label: 'Review', value: 'REVIEW', color: 'purple' },
-    { position: 3, label: 'Error', value: 'ERROR', color: 'red' },
-    { position: 4, label: 'Recovery', value: 'RECOVERY', color: 'yellow' },
-  ],
+  label: 'Waiting Reason',
+  type: FieldType.TEXT,
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

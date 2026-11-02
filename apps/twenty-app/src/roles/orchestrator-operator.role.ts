@@ -2,8 +2,11 @@ import { defineRole } from 'twenty-sdk/define';
 
 import {
   AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
+  AI_RUN_JOURNAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  AI_RUN_OBJECT_UNIVERSAL_IDENTIFIER,
   ORCHESTRATOR_OPERATOR_ROLE_UNIVERSAL_IDENTIFIER,
   PROJECT_OBJECT_UNIVERSAL_IDENTIFIER,
+  WORKSPACE_MEMBER_OBJECT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
 export default defineRole({
@@ -32,6 +35,27 @@ export default defineRole({
       objectUniversalIdentifier: AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
       canReadObjectRecords: true,
       canUpdateObjectRecords: true,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: WORKSPACE_MEMBER_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: AI_RUN_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: AI_RUN_JOURNAL_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
       canSoftDeleteObjectRecords: false,
       canDestroyObjectRecords: false,
     },

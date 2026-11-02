@@ -1,10 +1,10 @@
 import { defineNavigationMenuItem, NavigationMenuItemType } from 'twenty-sdk/define';
 
 export default defineNavigationMenuItem({
-  universalIdentifier: '65822e8c-5810-47e8-9708-441501eadeea',
-  name: 'aiTask',
+  universalIdentifier: '344808d4-bbac-4c74-97a8-5f23c61b18a8',
+  name: 'ai-task',
   icon: 'IconCompass',
   position: 0,
   type: NavigationMenuItemType.OBJECT,
-  targetObjectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  targetObjectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });
