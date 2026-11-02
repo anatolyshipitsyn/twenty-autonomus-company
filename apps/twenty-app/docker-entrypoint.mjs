@@ -6,10 +6,13 @@ const serverUrl = process.env.TWENTY_SERVER_URL;
 const authOrigin = process.env.TWENTY_AUTH_ORIGIN;
 const adminEmail = process.env.TWENTY_ADMIN_EMAIL;
 const adminPassword = process.env.TWENTY_ADMIN_PASSWORD;
+const operatorEmail = process.env.ORCHESTRATOR_OPERATOR_EMAIL;
+// Keep this in sync with ORCHESTRATOR_OPERATOR_ROLE_UNIVERSAL_IDENTIFIER.
+const operatorRoleUniversalIdentifier = 'bf7ef328-ce56-4dba-933b-fe71893bca90';
 
-if (!serverUrl || !authOrigin || !adminEmail || !adminPassword) {
+if (!serverUrl || !authOrigin || !adminEmail || !adminPassword || !operatorEmail) {
   throw new Error(
-    'TWENTY_SERVER_URL, TWENTY_AUTH_ORIGIN, TWENTY_ADMIN_EMAIL and TWENTY_ADMIN_PASSWORD are required',
+    'TWENTY_SERVER_URL, TWENTY_AUTH_ORIGIN, TWENTY_ADMIN_EMAIL, TWENTY_ADMIN_PASSWORD and ORCHESTRATOR_OPERATOR_EMAIL are required',
   );
 }
 
@@ -56,6 +59,80 @@ if (!accessToken || !Number.isFinite(accessTokenExpiresAt) || accessTokenExpires
   throw new Error('Twenty did not return a valid access token for the configured local administrator');
 }
 
+async function authenticatedRequest(endpoint, query) {
+  const response = await fetch(`${serverUrl}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Twenty bootstrap request to ${endpoint} failed with HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+
+  if (payload.errors?.length) {
+    throw new Error(payload.errors[0].message);
+  }
+
+  return payload.data;
+}
+
+async function ensureOperatorRoleAssignment(isChildRunning) {
+  const operatorEmailLiteral = JSON.stringify(operatorEmail);
+  let lastError;
+
+  for (let attempt = 0; attempt < 120 && isChildRunning(); attempt += 1) {
+    try {
+      const memberData = await authenticatedRequest(
+        '/graphql',
+        `{ workspaceMembers(first: 1, filter: { userEmail: { eq: ${operatorEmailLiteral} } }) { edges { node { id userEmail } } } }`,
+      );
+      const member = memberData.workspaceMembers?.edges?.[0]?.node;
+
+      if (!member) {
+        if (attempt >= 4) {
+          console.warn(
+            `No seeded workspace member found for ${operatorEmail}; role assignment is skipped. It is created only when PostgreSQL initializes an empty volume.`,
+          );
+          return;
+        }
+      } else {
+        const roleData = await authenticatedRequest(
+          '/metadata',
+          '{ getRoles { id universalIdentifier } }',
+        );
+        const role = roleData.getRoles?.find(
+          (candidate) => candidate.universalIdentifier === operatorRoleUniversalIdentifier,
+        );
+
+        if (role) {
+          await authenticatedRequest(
+            '/metadata',
+            `mutation { updateWorkspaceMemberRole(workspaceMemberId: "${member.id}", roleId: "${role.id}") { id } }`,
+          );
+          console.info(`Assigned Orchestrator Operator to ${operatorEmail}`);
+          return;
+        }
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+
+  if (lastError) {
+    console.error(`Could not assign Orchestrator Operator to ${operatorEmail}: ${lastError.message}`);
+  } else if (isChildRunning()) {
+    console.error(`Timed out waiting for the Orchestrator Operator role to sync for ${operatorEmail}`);
+  }
+}
+
 const home = process.env.HOME ?? '/tmp/twenty-app-dev-home';
 const configDirectory = join(home, '.twenty');
 const targetConfigPath = join(configDirectory, 'config.json');
@@ -84,6 +161,10 @@ if (!command) {
 
 const { spawn } = await import('node:child_process');
 const child = spawn(command, args, { stdio: 'inherit' });
+let childRunning = true;
+ensureOperatorRoleAssignment(() => childRunning).catch((error) => {
+  console.error(`Could not provision ${operatorEmail}: ${error.message}`);
+});
 const renewalDelay = Math.max(1_000, accessTokenExpiresAt - Date.now() - 60_000);
 const renewalTimer = setTimeout(() => {
   console.info('Restarting app-dev to renew its local Twenty session');
@@ -103,6 +184,7 @@ child.on('error', (error) => {
 });
 
 child.on('exit', (code, signal) => {
+  childRunning = false;
   clearTimeout(renewalTimer);
   process.exitCode = code ?? (signal ? 1 : 0);
 });

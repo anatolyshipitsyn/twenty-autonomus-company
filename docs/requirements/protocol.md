@@ -1,21 +1,23 @@
 # Workflows and execution protocol
 
-Version: 1.6 · Date: 1 November 2026 · Status: proposed NestJS/Codex App Server adapter contract; Not verified.
+Version: 1.7 · Date: 2 November 2026 · Status: proposed NestJS/Codex App Server adapter contract; not verified.
 
 [Русская версия](protocol.ru.md) · [All requirements](../requirements.md) · [PRD](../PRD.md)
 
 ## 1. Workflows and protocol
 
-### Four workflows
+### MVP workflows
 
 | ID | Workflow / trigger | Responsibility |
 | --- | --- | --- |
-| PROTO-01 | Operator action / Single manual trigger + Form | All operator actions, permissions, and correlation; one authorization version per action key |
-| PROTO-02 | Dispatch / Schedule | READY without activeRun, free worker, Project validation, router, snapshot, run, and START; serialized Dispatch |
-| PROTO-03 | Apply worker event / new Journal business EVENT | Idempotent application of STARTED/QUESTION/ASSIGNED/RESULT, HANDOFF_REQUEST → ASSIGN routing, WORK_COMPLETED → PUBLISH_PR, PR_CREATED and outcome |
-| PROTO-04 | Recovery monitor / Schedule | Last contact/progress, reapplication of persisted facts, RECONCILE on reconnect, and WAITING/RECOVERY on unknown outcome |
+| PROTO-01 | Operator actions / three single-record manual triggers | SUBMIT, ACCEPT, and REWORK verify the caller's membership in Orchestrator Operator; record permissions alone do not replace this check |
+| PROTO-02 | Apply Journal event / new DISPATCH_REQUEST | One Worker selects one READY task, persists a request, and waits for START; the workflow validates the task and Project, rejects another activeRun, then creates the snapshot, AiRun, and START |
+| PROTO-03 | Apply Journal event / new Worker event | Idempotently applies STARTED/RESULT/ERROR/PR_CREATED; heartbeat/ACK and operator decisions do not trigger lifecycle transitions |
+| PROTO-04 | Recovery monitor / Schedule | Deferred; progress checks, RECONCILE on reconnect, and WAITING/RECOVERY on unknown outcomes |
 
-Schedule defaults to every minute; validate schedule timezone in compatibility gate. Heartbeat/APPLIED and technical exports do not trigger business loops.
+Dispatch is driven by one Worker poller, not a Twenty schedule. The Worker submits no next request until the current run has a confirmed outcome; an unknown outcome keeps the queue blocked. Recovery monitor remains a separate scheduled workflow for later scope.
+
+For the MVP, `runKey = taskId:requestVersion`. The `DISPATCH_REQUEST` key is `<runKey>:DISPATCH_REQUEST`; the request contains `taskId`, `runKey`, and `payload.requestVersion`, which must match the task's current version. Worker event keys are `<runKey>:<eventType>` and remain stable on redelivery; events carry `taskId`, `runId`, `runKey`, and `payload.requestVersion`. `RESULT` also contains `resultSummary`, `prUrl`, `headCommit`, and `evidence` with `draftPr: true` and a non-empty set of passing mandatory checks. Transitions reject mismatched keys or versions.
 
 ### Journal operations
 
@@ -30,6 +32,7 @@ Schedule defaults to every minute; validate schedule timezone in compatibility g
 
 **EVENT**
 
+- `DISPATCH_REQUEST`
 - `STARTED`
 - `QUESTION`
 - `HANDOFF_REQUEST`
@@ -42,6 +45,8 @@ Schedule defaults to every minute; validate schedule timezone in compatibility g
 - `HEARTBEAT`
 - `RECOVERY_REPORT`
 - `CHECKPOINT`
+- `ACCEPT`
+- `REWORK`
 
 `PROTO-05`: PENDING denotes an unacknowledged command/unprocessed event; APPLIED denotes an executed command/applied event. ACK includes resultCode OK/ERROR/REJECTED; PENDING after a network error is an unknown outcome. operationKey remains stable on delivery; validate task/runKey/assignmentVersion/questionId/handoffId as applicable. Reject wrong versions or conflicting payloads while retaining diagnostics.
 

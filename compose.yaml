@@ -13,9 +13,13 @@ x-settings:
     POSTGRES_DB: ${PG_DATABASE_NAME:-default}
     DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@lvh.me}
     DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-LocalTwentyAdmin2026}
+    ORCHESTRATOR_OPERATOR_EMAIL: ${ORCHESTRATOR_OPERATOR_EMAIL:-stage4-operator@lvh.me}
+    ORCHESTRATOR_OPERATOR_PASSWORD: ${ORCHESTRATOR_OPERATOR_PASSWORD:-LocalStage4Operator2026}
   twenty-environment: &twenty-environment
     NODE_PORT: "3000"
     SERVER_URL: ${SERVER_URL:-http://localhost:${HTTP_PORT:-3000}}
+    # Local workflows execute trusted app code inside the Twenty server/worker.
+    LOGIC_FUNCTION_TYPE: ${LOGIC_FUNCTION_TYPE:-LOCAL}
     PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
     REDIS_URL: redis://redis:6379
     STORAGE_TYPE: local
@@ -83,12 +87,14 @@ services:
       TWENTY_AUTH_ORIGIN: ${SERVER_URL:-http://localhost:${HTTP_PORT:-3000}}
       TWENTY_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@lvh.me}
       TWENTY_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-LocalTwentyAdmin2026}
+      ORCHESTRATOR_OPERATOR_EMAIL: ${ORCHESTRATOR_OPERATOR_EMAIL:-stage4-operator@lvh.me}
       # Dedicated API key for worker-scoped API calls and integration checks.
       # Keep the value in the local, git-ignored .env file.
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}
     volumes:
       - ./apps/twenty-app:/workspace/app
       - app-dev-node-modules:/workspace/app/node_modules
+      - ./apps/twenty-app/docker-entrypoint.mjs:/usr/local/bin/twenty-app-dev-entrypoint.mjs:ro
     depends_on:
       server:
         condition: service_healthy

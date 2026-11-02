@@ -1,21 +1,23 @@
 # Workflows и протокол исполнения
 
-Версия: 1.6 · Дата: 1 ноября 2026 · Статус: предлагаемый NestJS/Codex App Server adapter-контракт; Не проверено.
+Версия: 1.7 · Дата: 2 ноября 2026 · Статус: предлагаемый NestJS/Codex App Server adapter-контракт; не проверено.
 
 [English version](protocol.md) · [Все требования](../requirements.ru.md) · [PRD](../PRD.ru.md)
 
 ## 1. Workflow и протокол
 
-### Четыре процесса
+### Процессы MVP
 
 | ID | Workflow / триггер | Обязанность |
 | --- | --- | --- |
-| PROTO-01 | Operator action / Single manual trigger + Form | Все операторские действия, permissions и корреляция; одна версия разрешения на ключ действия |
-| PROTO-02 | Dispatch / Schedule | READY без activeRun, свободный worker, Project validation, маршрутизатор, snapshot, run и START; сериализованный Dispatch |
-| PROTO-03 | Apply worker event / новый бизнес-EVENT Journal | Идемпотентное применение STARTED/QUESTION/ASSIGNED/RESULT, маршрутизация HANDOFF_REQUEST → ASSIGN, WORK_COMPLETED → PUBLISH_PR, PR_CREATED и итог |
-| PROTO-04 | Recovery monitor / Schedule | Последняя связь/прогресс, повторное применение сохранённых фактов, RECONCILE при reconnect и WAITING/RECOVERY при неизвестном исходе |
+| PROTO-01 | Operator actions / три ручных триггера на одной записи | SUBMIT, ACCEPT и REWORK проверяют членство вызвавшего в Orchestrator Operator; права на изменение записи сами по себе не заменяют эту проверку |
+| PROTO-02 | Apply Journal event / новый DISPATCH_REQUEST | Единственный Worker выбирает одну READY-задачу, создаёт запрос и ждёт START; workflow проверяет задачу и Project, отсутствие другого activeRun, затем создаёт snapshot, AiRun и START |
+| PROTO-03 | Apply Journal event / новое событие Worker | Идемпотентно применяет STARTED/RESULT/ERROR/PR_CREATED; heartbeat/ACK и операторские решения не запускают lifecycle-переходы |
+| PROTO-04 | Recovery monitor / Schedule | Отложено; проверка прогресса, RECONCILE при reconnect и WAITING/RECOVERY при неизвестном исходе |
 
-Schedule defaults — раз в минуту; timezone расписания проверяется в compatibility gate. Heartbeat/APPLIED и технический экспорт не запускают бизнес-циклы.
+Dispatch запускается одиночным worker poller, не расписанием Twenty. Worker не подаёт следующую заявку до подтверждённого результата текущей; неизвестный исход оставляет очередь заблокированной. Recovery monitor остаётся отдельным scheduled workflow будущего объёма.
+
+Для MVP `runKey = taskId:requestVersion`. Ключ запроса `DISPATCH_REQUEST` — `<runKey>:DISPATCH_REQUEST`; запрос содержит `taskId`, `runKey`, а `payload.requestVersion` должен совпадать с текущей версией задачи. Ключи событий Worker имеют вид `<runKey>:<eventType>` и остаются теми же при повторной доставке; событие несёт `taskId`, `runId`, `runKey` и `payload.requestVersion`. `RESULT` дополнительно содержит `resultSummary`, `prUrl`, `headCommit` и `evidence` с `draftPr: true` и непустым массивом успешных обязательных проверок. Переходы отклоняют несовпадение ключей или версии.
 
 ### Операции Journal
 
@@ -30,6 +32,7 @@ Schedule defaults — раз в минуту; timezone расписания пр
 
 **EVENT**
 
+- `DISPATCH_REQUEST`
 - `STARTED`
 - `QUESTION`
 - `HANDOFF_REQUEST`
@@ -42,6 +45,8 @@ Schedule defaults — раз в минуту; timezone расписания пр
 - `HEARTBEAT`
 - `RECOVERY_REPORT`
 - `CHECKPOINT`
+- `ACCEPT`
+- `REWORK`
 
 `PROTO-05`: PENDING означает неподтверждённую команду/необработанное событие; APPLIED означает исполненную команду/применённое событие. ACK включает resultCode OK/ERROR/REJECTED; PENDING после сетевой ошибки является неизвестным исходом. operationKey стабилен при доставке; task/runKey/assignmentVersion/questionId/handoffId проверяются по применимости. Неверная версия или конфликтующий payload отклоняется с сохранением диагностики.
 
