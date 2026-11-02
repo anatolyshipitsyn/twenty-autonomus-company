@@ -35,6 +35,21 @@ docker compose logs -f app-dev
 
 Watcher запускается с `--no-prune`, чтобы удаление определения из исходников само по себе не удаляло его из workspace. Не запускайте параллельно отдельный `twenty app apply`. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации.
 
+### Повторная авторизация CLI
+
+Если watcher пишет `Your session on autonomus-local expired and could not be refreshed`, обновите авторизацию CLI на хосте и пересоздайте только его конфиг-том:
+
+```bash
+twenty auth login --remote autonomus-local
+docker compose stop app-dev
+docker compose rm -f app-dev
+docker volume ls --filter name=app-dev-cli-config
+docker volume rm twenty-autonomus-company_app-dev-cli-config
+docker compose up -d app-dev
+```
+
+Если задано другое `COMPOSE_PROJECT_NAME`, передайте в `docker volume rm` имя, которое вернул `docker volume ls`. Не используйте `docker compose down -v`: эта команда удалит также тома базы данных и файлов Twenty.
+
 ## Проверки
 
 По отдельному запросу доступны скрипты пакета:
