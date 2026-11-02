@@ -73,6 +73,7 @@ services:
     build:
       context: ./apps/twenty-app
       dockerfile: Dockerfile.dev
+    network_mode: service:server
     command:
       - sh
       - -lc
