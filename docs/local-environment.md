@@ -7,19 +7,21 @@ This Compose stack does not start the orchestrator worker or Codex App Server. T
 ## Start
 
 1. Review local connection and secret values in the private `.env` file.
-2. Start the stack and wait for the server healthcheck:
+2. Start the stack and wait for the server healthcheck. The `app-dev` service also starts automatically; it syncs the mounted `apps/twenty-app` source into the local workspace:
 
    ```sh
    docker compose up -d --wait
    ```
 
-3. Open `http://localhost:3000` and sign in with the default administrator credentials below. Existing database volumes retain their existing accounts.
+3. Open `http://localhost:3000` and sign in with the default administrator credentials below. Existing database volumes retain their existing accounts. Follow app sync output with `docker compose logs -f app-dev`.
 
 ## Behavior and limits
 
 - `IS_MULTIWORKSPACE_ENABLED` defaults to `false`; registration remains limited to the configured local workspace behavior.
 - The upstream image is pinned by `TAG` (default `v2.54.0`). Recheck compatibility before changing the pinned version.
 - The Compose healthcheck covers the server endpoint. It does not verify account creation or workspace setup.
+- `app-dev` requires an authenticated `autonomus-local` remote in the host CLI config (`~/.twenty/config.json` by default). Set `TWENTY_CLI_CONFIG_FILE` in `.env` to use another config file. The mounted CLI config is read-only; the container copies only the `autonomus-local` remote into its private `app-dev-cli-config` volume and points it at `http://server:3000`. OAuth token refreshes persist in that volume.
+- `app-dev` mounts the app source and keeps Linux dependencies in the `app-dev-node-modules` volume. Rebuild only this helper image after changing its Dockerfile or pinned CLI version; app source changes are watched live.
 - Keep `.env` private; it may contain API credentials and local secrets.
 
 On the first initialization of an empty PostgreSQL data volume, the official Postgres entrypoint runs `entrypoint-initdb/00-extensions.sql` followed by `entrypoint-initdb/10-default.sql`. The SQL dump is a snapshot of the local `default` database. Init scripts do not run again when the existing `db-data` volume is reused; reinitializing it requires intentionally replacing that volume.

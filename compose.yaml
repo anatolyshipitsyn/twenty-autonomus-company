@@ -7,6 +7,7 @@ x-settings:
   redis-image: &redis-image ${REDIS_IMAGE:-redis:7-alpine}
   http-port: &http-port ${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-3000}:3000
   postgres-port: &postgres-port ${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
+  twenty-cli-config: &twenty-cli-config ${TWENTY_CLI_CONFIG_FILE:-${HOME}/.twenty/config.json}
   database: &database
     POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
     POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
@@ -69,6 +70,32 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  app-dev:
+    build:
+      context: ./apps/twenty-app
+      dockerfile: Dockerfile.dev
+    command:
+      - sh
+      - -lc
+      - yarn install --immutable && exec yarn twenty app dev --create --remote autonomus-local --no-prune
+    environment:
+      TWENTY_CLI_CONFIG_FILE: /run/secrets/twenty-cli-config
+      TWENTY_SERVER_URL: http://server:3000
+    volumes:
+      - ./apps/twenty-app:/workspace/app
+      - app-dev-node-modules:/workspace/app/node_modules
+      - app-dev-cli-config:/root/.twenty
+      - type: bind
+        source: *twenty-cli-config
+        target: /run/secrets/twenty-cli-config
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: *postgres-image
     environment: *database
@@ -97,3 +124,5 @@ services:
 volumes:
   db-data:
   server-local-data:
+  app-dev-node-modules:
+  app-dev-cli-config:

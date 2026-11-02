@@ -1,0 +1,9 @@
+FROM node:24.5.0-bookworm-slim
+
+RUN npm install --global twenty@2.54.3 && corepack enable
+
+WORKDIR /workspace/app
+
+COPY docker-entrypoint.mjs /usr/local/bin/twenty-app-dev-entrypoint.mjs
+
+ENTRYPOINT ["node", "/usr/local/bin/twenty-app-dev-entrypoint.mjs"]

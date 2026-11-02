@@ -24,19 +24,16 @@ If `twenty` is not found after installation, make sure the active Node version's
 
 ## Синхронизация с локальным workspace
 
-Первую установку выполняют так:
+Для первого запуска убедитесь, что локальный Twenty запущен, а remote `autonomus-local` создан и аутентифицирован (см. раздел «Установка и подключение»). Корневой Compose поднимет Twenty и контейнер `app-dev`, который зарегистрирует приложение при необходимости, установит зависимости и запустит watcher:
 
 ```bash
-twenty app apply --create --remote autonomus-local
+docker compose up -d --wait
+docker compose logs -f app-dev
 ```
 
-После изменений исходников синхронизируйте приложение командой:
+Контейнер монтирует исходники `apps/twenty-app`, поэтому изменения файлов синхронизируются с Twenty без пересборки образа сервера. Для подключения он читает `~/.twenty/config.json` только для чтения, оставляет в рабочем Docker volume remote `autonomus-local` и использует адрес `http://server:3000`. Убедитесь, что этот remote создан и аутентифицирован на хосте. Чтобы использовать другой путь к конфигу CLI, задайте `TWENTY_CLI_CONFIG_FILE` в корневом `.env`.
 
-```bash
-twenty app apply --remote autonomus-local
-```
-
-Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации. Для синхронизации не используйте `twenty app dev`.
+Watcher запускается с `--no-prune`, чтобы удаление определения из исходников само по себе не удаляло его из workspace. Не запускайте параллельно отдельный `twenty app apply`. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации.
 
 ## Проверки
 
