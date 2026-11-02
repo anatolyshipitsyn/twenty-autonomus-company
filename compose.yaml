@@ -83,6 +83,9 @@ services:
       TWENTY_AUTH_ORIGIN: ${SERVER_URL:-http://localhost:${HTTP_PORT:-3000}}
       TWENTY_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@lvh.me}
       TWENTY_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-LocalTwentyAdmin2026}
+      # Dedicated API key for worker-scoped API calls and integration checks.
+      # Keep the value in the local, git-ignored .env file.
+      TWENTY_API_KEY: ${TWENTY_API_KEY:-}
     volumes:
       - ./apps/twenty-app:/workspace/app
       - app-dev-node-modules:/workspace/app/node_modules

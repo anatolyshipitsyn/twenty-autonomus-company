@@ -7,5 +7,4 @@ export default defineField({
   type: FieldType.RAW_JSON,
   objectUniversalIdentifier: '33dc6563-3c21-4f10-953b-27a2b9189b85',
   description: 'Sanitized processing result without secrets, logs or local paths',
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

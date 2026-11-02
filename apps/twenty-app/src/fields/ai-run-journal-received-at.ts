@@ -6,5 +6,4 @@ export default defineField({
   label: 'Received At',
   type: FieldType.DATE_TIME,
   objectUniversalIdentifier: '33dc6563-3c21-4f10-953b-27a2b9189b85',
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

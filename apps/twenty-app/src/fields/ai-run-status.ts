@@ -14,5 +14,4 @@ export default defineField({
     { position: 3, label: 'Error', value: 'ERROR', color: 'red' },
     { position: 4, label: 'Unknown', value: 'UNKNOWN', color: 'orange' },
   ],
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

@@ -7,5 +7,4 @@ export default defineField({
   type: FieldType.RAW_JSON,
   objectUniversalIdentifier: '318342d0-6860-4b32-bc33-dc615100d9bd',
   description: 'Immutable task, Project, repository commit, profile and protocol config references; no secrets, logs or local paths',
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

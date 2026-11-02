@@ -6,5 +6,4 @@ export default defineField({
   label: 'Profile Key',
   type: FieldType.TEXT,
   objectUniversalIdentifier: '318342d0-6860-4b32-bc33-dc615100d9bd',
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

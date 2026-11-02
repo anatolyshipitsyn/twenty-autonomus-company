@@ -19,10 +19,9 @@ export default defineObject({
       name: 'operationKey',
       label: 'Operation Key',
       isNullable: false,
-      defaultValue: null,
+      defaultValue: "''",
       description: 'Idempotency key for a command or event',
       icon: 'IconAbc',
-      disabledFieldPermissionActions: ['canUpdateFieldValue'],
     },
   ],
 });

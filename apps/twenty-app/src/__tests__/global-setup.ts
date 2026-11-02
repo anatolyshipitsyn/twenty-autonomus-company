@@ -31,6 +31,14 @@ export async function setup() {
   const { apiUrl } = validateEnvironmentOrThrow();
 
   await checkServerOrThrow(apiUrl);
+
+  // The app-dev watcher may already have installed the app in an isolated
+  // integration workspace. In that mode, test the live schema without
+  // uninstalling/reapplying it from a second CLI process.
+  if (process.env.TWENTY_SKIP_APP_SETUP === 'true') {
+    return;
+  }
+
   await teardown();
 
   const result = await runTwenty(['app', 'apply', '--create']);
@@ -43,6 +51,10 @@ export async function setup() {
 }
 
 export async function teardown() {
+  if (process.env.TWENTY_SKIP_APP_SETUP === 'true') {
+    return;
+  }
+
   const result = await runTwenty(['app', 'uninstall', '--yes']);
 
   if (!result.ok && result.error.code !== 'APP_NOT_INSTALLED') {

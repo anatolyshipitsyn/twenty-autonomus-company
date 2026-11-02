@@ -9,6 +9,5 @@ export default defineField({
   relationTargetObjectMetadataUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
   relationTargetFieldMetadataUniversalIdentifier: '57c20d1a-f18e-4370-825d-51e8f1bf7ccd',
   isNullable: false,
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
   universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.RESTRICT, joinColumnName: 'taskId' },
 });

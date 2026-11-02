@@ -10,5 +10,4 @@ export default defineField({
     { position: 0, label: 'Outbound', value: 'OUTBOUND', color: 'blue' },
     { position: 1, label: 'Inbound', value: 'INBOUND', color: 'green' },
   ],
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

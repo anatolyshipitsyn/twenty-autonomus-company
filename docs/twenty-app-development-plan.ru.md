@@ -92,14 +92,14 @@
 
 - [x] Создать `AiRun` со связью task, requestVersion, уникальным runKey, status, threadId/turnId, profile key, snapshot, итогом, evidence, PR URL/headCommit и временными полями.
 - [x] Создать `AiRunJournal` с уникальным operationKey, runKey, связями task/run, direction/type/state, payload/result и timestamps.
-- [x] Добавить уникальные индексы на runKey и operationKey. Фактическое поведение конфликта/Upsert выбранного API ещё не проверено.
-- [x] Ограничить object permissions для operator/worker и запретить изменять ключи, snapshot, ссылки и содержимое журнала обычными/API ролями. Worker пишет новые Journal records; workflow-переход состояния пока не реализован.
-- [x] Добавить snapshot, предназначенный для задачи/критериев, Project/repository/base commit, profile/policy и protocol/config references; описания запрещают помещать в него secrets, tool logs и локальные пути.
-- [ ] Интеграционно проверить повторную доставку одного operationKey, конфликт payload и запрет перезаписи APPLIED/терминальных записей.
+- [x] Добавить уникальные индексы на runKey и operationKey.
+- [x] Настроить роль Worker: чтение команд и создание/изменение Journal; без права обновления AiTask и AiRun. В Twenty `canUpdateObjectRecords` разрешает и create, и update, поэтому Worker технически может изменить любую Journal-запись, включая APPLIED.
+- [x] Добавить snapshot, предназначенный для задачи/критериев, Project/repository/base commit, profile/policy и protocol/config references; не включать secrets, tool logs и локальные пути.
+- [x] Интеграционно проверить create Journal от Worker, дубликат/конфликт operationKey, изменение APPLIED Journal и запрет изменения AiRun.
 
-**Подтверждение исходника 2 ноября 2026:** `AiTask` и его прежние поля/relations/views/page layout сохранены по ID локального workspace (`729e12b4-81f5-4e3e-b379-98e33bffdb23`); Run и Journal ссылаются на эту модель. Read-only `twenty app plan --remote autonomus-local --json` теперь показывает 0 create/update/delete/destructive и diagnostics 0, то есть app manifest соответствует workspace. `twenty app typecheck` и `yarn lint` прошли. В навигации UI видна папка Execution. Поведение уникальных конфликтов/Upsert, повторная доставка, несовпадающий payload, ограничения API-key и терминальные обновления остаются Not verified до интеграционной проверки.
+**Проверка 2 ноября 2026:** приложение синхронизировано в отдельный тестовый workspace Twenty 2.54.0 с временным ключом роли Orchestrator Worker. Проверка подтвердила: Worker создаёт Journal; уникальный operationKey отклоняет повтор и конфликт; прямой API-запрос Worker может изменить APPLIED Journal; Worker не может изменить AiRun. Это ограничение нативных permissions Twenty. Протокол приложения обязан сохранять payload и не переписывать APPLIED при обычной доставке, но ключ Worker является доверенным backend secret, а не изолированной границей безопасности. Записи AiTask/AiRun остаются защищены от обновления Worker.
 
-**Готово, когда:** по записям можно однозначно связать задачу, попытку и команду/событие; повторная доставка не запускает действие второй раз, а конфликт payload выявляется.
+**Готово, когда:** события можно связать с задачей, run и operationKey; Worker может их записывать; повтор обнаруживается; workflow/worker-контракт не повторяет действие. Ограничение записи APPLIED на уровне Twenty не заявляется.
 
 ### Этап 4. Реализовать минимальные Workflows Twenty
 

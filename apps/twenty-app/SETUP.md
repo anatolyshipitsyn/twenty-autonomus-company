@@ -37,6 +37,20 @@ Watcher запускается с `--no-prune`, чтобы удаление оп
 
 `app-dev` получает свежий токен при каждом старте. Если вход не проходит, проверьте, что email и пароль в `.env` совпадают с учётной записью локального администратора. После смены пароля в уже созданном workspace измените `DEFAULT_ADMIN_PASSWORD` в `.env` на тот же пароль и пересоздайте `app-dev`.
 
+Для интеграционных запросов от имени worker создайте отдельный API key в **Settings → Developers → API** и назначьте ему роль **Orchestrator Worker** через **Settings → Members → Roles → Orchestrator Worker → Assignment → Assign to API key**. Положите ключ в корневой, игнорируемый Git файлом `.env`:
+
+```dotenv
+TWENTY_API_KEY=<worker-api-key>
+```
+
+Compose передаёт эту переменную в `app-dev`; CLI remote `autonomus-local` продолжает использовать отдельный токен администратора для синхронизации app. Пересоздайте только `app-dev`, чтобы обновить его окружение:
+
+```bash
+docker compose up -d --no-deps app-dev
+```
+
+Значение `TWENTY_API_KEY` не добавляйте в app manifest, исходники или Git. Роль Worker может создавать и изменять записи AiRunJournal, включая APPLIED; это ограничение объектных прав Twenty. Она не может обновлять AiTask и AiRun. Поэтому ключ храните только как доверенный backend secret: обработчик должен сверять operationKey и не менять уже применённый результат, хотя Twenty не блокирует прямое изменение Journal через API. Для интеграционного теста используйте изолированный тестовый workspace и передавайте URL сервера через `TWENTY_API_URL`.
+
 ## Проверки
 
 По отдельному запросу доступны скрипты пакета:
