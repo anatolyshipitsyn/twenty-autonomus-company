@@ -1,10 +1,9 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: 'e9f0eb79-c457-4af3-b91f-99bed2caff75',
+  universalIdentifier: 'f8966f3d-b35e-4c1f-9f85-75777e26b4a3',
   name: 'error',
   label: 'Error',
-  type: FieldType.RICH_TEXT,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
-  description: 'Operator-readable error summary without secrets or local paths',
+  type: FieldType.TEXT,
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

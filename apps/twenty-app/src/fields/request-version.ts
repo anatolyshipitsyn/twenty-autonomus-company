@@ -1,12 +1,11 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: 'c3904457-19ce-4fdf-9946-e8b7db41edcb',
+  universalIdentifier: '9d3748bd-7a0b-4a69-a5b2-6ed4e4f591b4',
   name: 'requestVersion',
-  label: 'Request version',
+  label: 'Request Version',
   type: FieldType.NUMBER,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
-  defaultValue: 1,
-  isNullable: false,
-  universalSettings: { dataType: 'int' },
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
+  defaultValue: 0,
+  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

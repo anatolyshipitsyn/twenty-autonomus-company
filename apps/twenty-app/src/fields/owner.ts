@@ -1,13 +1,12 @@
 import { defineField, FieldType, RelationType, OnDeleteAction } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: '5b80fd3a-3293-4d6e-a095-fb395a1c562c',
+  universalIdentifier: '6ccba282-8d22-40c1-a6b4-cf5ccdfcd199',
   name: 'owner',
   label: 'Owner',
   type: FieldType.RELATION,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
   relationTargetObjectMetadataUniversalIdentifier: '20202020-3319-4234-a34c-82d5c0e881a6',
-  relationTargetFieldMetadataUniversalIdentifier: 'efc65384-0e5b-4352-a76b-d84c2836a432',
-  isNullable: false,
+  relationTargetFieldMetadataUniversalIdentifier: '565c72be-41ae-42ef-aab6-6dfe1841050d',
   universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.RESTRICT, joinColumnName: 'ownerId' },
 });

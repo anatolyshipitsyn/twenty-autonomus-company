@@ -1,9 +1,9 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 
 export default defineField({
-  universalIdentifier: '4d765a40-3811-4cc1-a7a9-113ac1c99d8d',
+  universalIdentifier: 'ff3f961c-98cb-4e67-9d0b-2a745cce1443',
   name: 'resultSummary',
-  label: 'Result summary',
-  type: FieldType.RICH_TEXT,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  label: 'Result Summary',
+  type: FieldType.TEXT,
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

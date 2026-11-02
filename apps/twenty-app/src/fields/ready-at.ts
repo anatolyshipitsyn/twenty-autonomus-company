@@ -5,5 +5,5 @@ export default defineField({
   name: 'readyAt',
   label: 'Ready at',
   type: FieldType.DATE_TIME,
-  objectUniversalIdentifier: '95867ede-7b17-465f-990c-40675d1dec71',
+  objectUniversalIdentifier: '729e12b4-81f5-4e3e-b379-98e33bffdb23',
 });

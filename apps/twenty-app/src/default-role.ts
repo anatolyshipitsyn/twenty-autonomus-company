@@ -2,6 +2,8 @@ import { defineApplicationRole } from 'twenty-sdk/define';
 
 import {
   AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
+  AI_RUN_JOURNAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  AI_RUN_OBJECT_UNIVERSAL_IDENTIFIER,
   APP_DISPLAY_NAME,
   DEFAULT_ROLE_UNIVERSAL_IDENTIFIER,
   PROJECT_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -28,6 +30,20 @@ export default defineApplicationRole({
     },
     {
       objectUniversalIdentifier: AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: AI_RUN_OBJECT_UNIVERSAL_IDENTIFIER,
+      canReadObjectRecords: true,
+      canUpdateObjectRecords: false,
+      canSoftDeleteObjectRecords: false,
+      canDestroyObjectRecords: false,
+    },
+    {
+      objectUniversalIdentifier: AI_RUN_JOURNAL_OBJECT_UNIVERSAL_IDENTIFIER,
       canReadObjectRecords: true,
       canUpdateObjectRecords: false,
       canSoftDeleteObjectRecords: false,
