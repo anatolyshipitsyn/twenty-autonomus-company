@@ -14,5 +14,4 @@ export default defineField({
     { position: 4, label: 'PR_CREATED', value: 'PR_CREATED', color: 'purple' },
     { position: 5, label: 'ACK', value: 'ACK', color: 'gray' },
   ],
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

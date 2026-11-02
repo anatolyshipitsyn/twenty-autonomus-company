@@ -13,5 +13,4 @@ export default defineField({
     { position: 2, label: 'Rejected', value: 'REJECTED', color: 'red' },
     { position: 3, label: 'Failed', value: 'FAILED', color: 'orange' },
   ],
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
 });

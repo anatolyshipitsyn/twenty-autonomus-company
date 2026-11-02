@@ -19,10 +19,9 @@ export default defineObject({
       name: 'runKey',
       label: 'Run Key',
       isNullable: false,
-      defaultValue: null,
+      defaultValue: "''",
       description: 'Stable identifier for this execution attempt',
       icon: 'IconAbc',
-      disabledFieldPermissionActions: ['canUpdateFieldValue'],
     },
   ],
 });

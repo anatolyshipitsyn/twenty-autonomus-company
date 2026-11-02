@@ -34,11 +34,16 @@ describe('CoreApiClient', () => {
         id: true,
       },
     });
-    expect(created.createNote.id).toBeDefined();
+    const createdNoteId = created.createNote?.id;
+    expect(createdNoteId).toBeDefined();
+
+    if (!createdNoteId) {
+      throw new Error('Note was not created');
+    }
 
     await client.mutation({
       destroyNote: {
-        __args: { id: created.createNote.id },
+        __args: { id: createdNoteId },
         id: true,
       },
     });

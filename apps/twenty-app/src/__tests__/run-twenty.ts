@@ -25,12 +25,19 @@ function withoutProjectBinaries(pathValue: string) {
 export function runTwenty(cliArguments: string[]): Promise<TwentyCliResult> {
   const executable = process.env.TWENTY_CLI ?? 'twenty';
 
+  const childEnvironment: NodeJS.ProcessEnv = {
+    ...process.env,
+    PATH: withoutProjectBinaries(process.env.PATH ?? ''),
+  };
+
+  // These credentials belong to the Core API test client. They must not
+  // redirect Twenty CLI operations away from its explicitly configured remote.
+  delete childEnvironment.TWENTY_API_URL;
+  delete childEnvironment.TWENTY_API_KEY;
+
   return new Promise((resolve, reject) => {
     const child = spawn(executable, [...cliArguments, '--json'], {
-      env: {
-        ...process.env,
-        PATH: withoutProjectBinaries(process.env.PATH ?? ''),
-      },
+      env: childEnvironment,
       stdio: ['ignore', 'pipe', 'inherit'],
     });
     let stdout = '';
