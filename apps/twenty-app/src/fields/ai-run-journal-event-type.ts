@@ -12,6 +12,9 @@ export default defineField({
     { position: 2, label: 'RESULT', value: 'RESULT', color: 'green' },
     { position: 3, label: 'ERROR', value: 'ERROR', color: 'red' },
     { position: 4, label: 'PR_CREATED', value: 'PR_CREATED', color: 'purple' },
-    { position: 5, label: 'ACK', value: 'ACK', color: 'gray' },
+    { position: 5, label: 'DISPATCH_REQUEST', value: 'DISPATCH_REQUEST', color: 'blue' },
+    { position: 6, label: 'ACCEPT', value: 'ACCEPT', color: 'green' },
+    { position: 7, label: 'REWORK', value: 'REWORK', color: 'orange' },
+    { position: 8, label: 'ACK', value: 'ACK', color: 'gray' },
   ],
 });

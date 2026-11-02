@@ -103,18 +103,27 @@
 
 ### Этап 4. Реализовать минимальные Workflows Twenty
 
-- [ ] Workflow Operator action валидирует состояние и полномочия, повышает requestVersion один раз и записывает явное разрешение.
-- [ ] Workflow Dispatch выбирает READY-задачу только при свободном worker/очереди, проверяет Project и обязательные поля, создаёт `AiRun` и START/PENDING.
-- [ ] Workflow Apply worker event применяет только подтверждённые `STARTED`, `RESULT`, `ERROR`, `PR_CREATED`; проверяет task/run/operation identity и дедупликацию.
-- [ ] Workflow Acceptance разрешает DONE только для последнего успешного результата с требуемыми доказательствами; REWORK/повтор создаёт новую requestVersion только действием оператора.
-- [ ] Встроить защиту от workflow recursion: технические ACK/heartbeat не запускают бизнес-переходы и расписание не пересекается само с собой.
-- [ ] Не строить отдельный backend workflow engine и не добавлять workflows для отложенных сценариев.
+- [x] Ручные workflows SUBMIT/ACCEPT/REWORK проверяют, что вызвавший — участник роли Orchestrator Operator, и передают обновление состояния только через приложение.
+- [x] Workflow Apply запускается на создании Journal, проверяет `taskId/runId/runKey/operationKey/requestVersion`, применяет `DISPATCH_REQUEST`, `STARTED`, `RESULT`, `ERROR`, `PR_CREATED` идемпотентно.
+- [ ] Worker отправляет ровно один `DISPATCH_REQUEST` для READY-задачи и ждёт сохранённый START; затем не запрашивает другую задачу до подтверждённого терминального события текущего run. Один host/worker обеспечивается локальной блокировкой и конфигурацией singleton. Реализация worker относится к этапу 5; сейчас это зафиксированный протокольный контракт.
+- [x] Dispatch проверяет READY, Project, обязательные поля и отсутствие другого activeRun; создаёт детерминированный `runKey=taskId:requestVersion`, AiRun и START/PENDING. Journal `run` nullable до создания AiRun.
+- [x] Acceptance разрешает DONE только для последнего успешного результата с passing evidence, draft PR и headCommit; REWORK/повтор повышает requestVersion только действием Оператора.
+- [x] Защитить от workflow recursion: Apply слушает только создание Journal; исходящие START, решения Оператора, ACK/heartbeat не запускают lifecycle-переходы.
+- [x] Не строить отдельный backend workflow engine и не добавлять workflows для отложенных сценариев.
 
 **Готово, когда:** lifecycle-переходы выполняются только штатными workflows, неверные и повторные события не меняют состояние, а ручная проверка сценариев проходит в целевом workspace.
 
+**Решения и состояние реализации 2 ноября 2026:** принят доверенный Operator с записью Task/Run/Journal; право прямой записи этим человеком является известным ограничением permissions. Роль включает системное право `WORKFLOWS`; без него workflow-кнопки были видны, но вызов отклонялся с `Пользователь не имеет прав доступа.` Workflow logic functions используют application role с записью в Task/Run/Journal и сверяют членство инициатора через `currentUser.workspaceMember.roles`, не запрашивая список ролей workspace. Четыре workflow синхронизированы в основном `autonomus-local` и тестовом workspace (`twenty app apply`, по 11 файлов); read-only план не показал расхождений. От Local Admin действие отклонено с ожидаемым сообщением `Only an assigned Orchestrator Operator can run this action.`; состояние задачи не изменилось.
+
+По подтверждению пользователя отправлено приглашение `stage4-operator@lvh.me` в тестовый workspace `localhost:3001`; участник принял его, и ему назначена роль Orchestrator Operator. Ручные действия в браузере выполнены в режиме имитации этого участника. SUBMIT создал READY-задачу версии 1; тестовые события `DISPATCH_REQUEST` и `ERROR` через Twenty API подтвердили создание одного AiRun, исходящего START, применение ERROR и очистку activeRun. REWORK завершился со статусом READY и версией 2. Затем тестовые DISPATCH_REQUEST/STARTED/RESULT создали успешный запуск с passing check, draft PR URL и headCommit; задача перешла в WAITING_REVIEW. Действие ACCEPT участника завершилось успешно: задача DONE, запись ACCEPT — APPLIED. В Journal нет повторных lifecycle-действий от исходящего START, что согласуется с защитой от рекурсии.
+
+События worker в этих сценариях создавались вручную через admin API как тестовые входные события; реальный worker и его последовательное ожидание подтверждения не проверены и остаются этапом 5. Для локальных workflows в Compose включён `LOGIC_FUNCTION_TYPE=LOCAL`, контейнеры server/worker основного стека пересозданы с этим режимом. Typecheck/lint прошли ранее; изменения роли синхронизированы в обоих workspace. Финальный read-only `twenty app plan` в обоих workspace показал 0 ожидающих действий и diagnostics; `git diff --check` прошёл.
+
+**Повторная проверка после чистой инициализации 2 ноября 2026:** пользователь выполнил `docker compose down -v` и `docker compose up -d --wait`. PostgreSQL последовательно выполнил init scripts `00`, `10`, `20`, `30`; `app-dev` зарегистрировал/синхронизировал приложение и подтвердил `Assigned Orchestrator Operator to stage4-operator@lvh.me`. API вернул workspace member и роль с ожидаемым universal identifier; `twenty app plan` показывает 0 действий и diagnostics. После входа во встроенном браузере основной workspace `localhost:3000` показывает четыре активных workflow: SUBMIT, ACCEPT, REWORK, Apply Journal event. Значит, workflow и пользователь/роль восстанавливаются из кода после удаления томов. Проверка UI выполнена на списке Workflows; повторные действия на вновь созданных данных в основном workspace не запускались.
+
 ### Этап 5. Согласовать контракт с worker и подключить минимальный цикл
 
-- [ ] Зафиксировать точные поля и payload команд START/RESULT/ERROR, operationKey/runKey, версии и ACK по реальной schema приложения.
+- [ ] Зафиксировать точные поля и payload `DISPATCH_REQUEST`/START/STARTED/RESULT/ERROR, operationKey/runKey, версии и ACK по реальной schema приложения; повтор запроса не должен создавать второй run.
 - [ ] Подтвердить, что worker читает только сохранённые разрешённые команды через поддерживаемый API Twenty; прямой SQL запрещён.
 - [ ] Проверить запуск одного разрешённого run и запись `STARTED` с threadId/turnId до применения RUNNING.
 - [ ] Проверить результат: worker сначала сохраняет evidence, summary, draft PR URL/headCommit, затем RESULT; Twenty переводит задачу в WAITING/REVIEW.

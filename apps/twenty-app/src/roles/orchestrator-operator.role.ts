@@ -1,4 +1,4 @@
-import { defineRole } from 'twenty-sdk/define';
+import { defineRole, SystemPermissionFlag } from 'twenty-sdk/define';
 
 import {
   AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -12,7 +12,7 @@ import {
 export default defineRole({
   universalIdentifier: ORCHESTRATOR_OPERATOR_ROLE_UNIVERSAL_IDENTIFIER,
   label: 'Orchestrator Operator',
-  description: 'Can configure Projects and manage AI Tasks.',
+  description: 'Trusted pilot operator: can configure Projects, manage AI Tasks, AI Runs, Journal records, and workflows.',
   canUpdateAllSettings: false,
   canAccessAllTools: false,
   canAccessAllAgentChatChannels: false,
@@ -23,6 +23,7 @@ export default defineRole({
   canBeAssignedToUsers: true,
   canBeAssignedToAgents: false,
   canBeAssignedToApiKeys: false,
+  permissionFlagUniversalIdentifiers: [SystemPermissionFlag.WORKFLOWS],
   objectPermissions: [
     {
       objectUniversalIdentifier: PROJECT_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -48,14 +49,14 @@ export default defineRole({
     {
       objectUniversalIdentifier: AI_RUN_OBJECT_UNIVERSAL_IDENTIFIER,
       canReadObjectRecords: true,
-      canUpdateObjectRecords: false,
+      canUpdateObjectRecords: true,
       canSoftDeleteObjectRecords: false,
       canDestroyObjectRecords: false,
     },
     {
       objectUniversalIdentifier: AI_RUN_JOURNAL_OBJECT_UNIVERSAL_IDENTIFIER,
       canReadObjectRecords: true,
-      canUpdateObjectRecords: false,
+      canUpdateObjectRecords: true,
       canSoftDeleteObjectRecords: false,
       canDestroyObjectRecords: false,
     },
