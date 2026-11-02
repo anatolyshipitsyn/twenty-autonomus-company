@@ -20,7 +20,7 @@ This Compose stack does not start the orchestrator worker or Codex App Server. T
 - `IS_MULTIWORKSPACE_ENABLED` defaults to `false`; registration remains limited to the configured local workspace behavior.
 - The upstream image is pinned by `TAG` (default `v2.54.0`). Recheck compatibility before changing the pinned version.
 - The Compose healthcheck covers the server endpoint. It does not verify account creation or workspace setup.
-- `app-dev` requires an authenticated `autonomus-local` remote in the host CLI config (`~/.twenty/config.json` by default). Set `TWENTY_CLI_CONFIG_FILE` in `.env` to use another config file. The mounted CLI config is read-only; the container copies only the `autonomus-local` remote into its private `app-dev-cli-config` volume and points it at `http://server:3000`. OAuth token refreshes persist in that volume.
+- `app-dev` authenticates as the local administrator using `DEFAULT_ADMIN_EMAIL` and `DEFAULT_ADMIN_PASSWORD` from `.env` (or the Compose defaults). The database init script uses the same values on a fresh `db-data` volume. The entrypoint obtains a new Twenty access token each time the watcher starts and restarts it before the token expires, so `docker compose down -v` does not leave it dependent on an old OAuth session.
 - `app-dev` mounts the app source and keeps Linux dependencies in the `app-dev-node-modules` volume. Rebuild only this helper image after changing its Dockerfile or pinned CLI version; app source changes are watched live.
 - Keep `.env` private; it may contain API credentials and local secrets.
 

@@ -8,7 +8,7 @@
 
 ## Установка и подключение
 
-Из каталога приложения:
+Для запуска watcher через Compose хостовая установка CLI и CLI-аутентификация не нужны. Для запуска CLI-команд непосредственно на хосте:
 
 ```bash
 nvm install
@@ -20,35 +20,22 @@ twenty auth login --url http://localhost:3000 --name autonomus-local
 
 If `twenty` is not found after installation, make sure the active Node version's global npm `bin` directory is in `PATH`; switching to the app's `.nvmrc` with `nvm use` normally does this.
 
-Вход сохраняет remote `autonomus-local` в пользовательской конфигурации CLI. Команды ниже указывают remote явно, чтобы не зависеть от выбранного по умолчанию.
+Эти команды сохраняют remote `autonomus-local` в пользовательской конфигурации CLI и нужны только для ручных команд Twenty на хосте.
 
 ## Синхронизация с локальным workspace
 
-Для первого запуска убедитесь, что локальный Twenty запущен, а remote `autonomus-local` создан и аутентифицирован (см. раздел «Установка и подключение»). Корневой Compose поднимет Twenty и контейнер `app-dev`, который зарегистрирует приложение при необходимости, установит зависимости и запустит watcher:
+Корневой Compose поднимет Twenty и контейнер `app-dev`, который установит зависимости, войдёт как локальный администратор и запустит watcher:
 
 ```bash
 docker compose up -d --wait
 docker compose logs -f app-dev
 ```
 
-Контейнер монтирует исходники `apps/twenty-app`, поэтому изменения файлов синхронизируются с Twenty без пересборки образа сервера. Для подключения он читает `~/.twenty/config.json` только для чтения, оставляет в рабочем Docker volume remote `autonomus-local` и использует адрес `http://server:3000`. Убедитесь, что этот remote создан и аутентифицирован на хосте. Чтобы использовать другой путь к конфигу CLI, задайте `TWENTY_CLI_CONFIG_FILE` в корневом `.env`.
+Контейнер монтирует исходники `apps/twenty-app`, поэтому изменения файлов синхронизируются с Twenty без пересборки образа сервера. Для входа он использует `DEFAULT_ADMIN_EMAIL` и `DEFAULT_ADMIN_PASSWORD` из корневого `.env` (либо значения по умолчанию из Compose). На пустом томе базы те же значения устанавливает init-скрипт. Поэтому после `docker compose down -v` новый workspace и watcher снова поднимутся без сохранённой OAuth-сессии. Контейнер автоматически перезапускает watcher перед истечением access token и получает новый.
 
 Watcher запускается с `--no-prune`, чтобы удаление определения из исходников само по себе не удаляло его из workspace. Не запускайте параллельно отдельный `twenty app apply`. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации.
 
-### Повторная авторизация CLI
-
-Если watcher пишет `Your session on autonomus-local expired and could not be refreshed`, обновите авторизацию CLI на хосте и пересоздайте только его конфиг-том:
-
-```bash
-twenty auth login --remote autonomus-local
-docker compose stop app-dev
-docker compose rm -f app-dev
-docker volume ls --filter name=app-dev-cli-config
-docker volume rm twenty-autonomus-company_app-dev-cli-config
-docker compose up -d app-dev
-```
-
-Если задано другое `COMPOSE_PROJECT_NAME`, передайте в `docker volume rm` имя, которое вернул `docker volume ls`. Не используйте `docker compose down -v`: эта команда удалит также тома базы данных и файлов Twenty.
+`app-dev` получает свежий токен при каждом старте. Если вход не проходит, проверьте, что email и пароль в `.env` совпадают с учётной записью локального администратора. После смены пароля в уже созданном workspace измените `DEFAULT_ADMIN_PASSWORD` в `.env` на тот же пароль и пересоздайте `app-dev`.
 
 ## Проверки
 
