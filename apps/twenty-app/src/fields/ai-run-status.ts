@@ -1,8 +1,11 @@
 import { defineField, FieldType } from 'twenty-sdk/define';
 import { AiRunStatus } from 'src/types/ai-run-status';
 
+export const AI_RUN_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
+  '11d36175-4054-4658-aca1-209a5b52f125';
+
 export default defineField({
-  universalIdentifier: '11d36175-4054-4658-aca1-209a5b52f125',
+  universalIdentifier: AI_RUN_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   name: 'status',
   label: 'Status',
   type: FieldType.SELECT,

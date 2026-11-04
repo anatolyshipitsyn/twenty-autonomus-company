@@ -1,7 +1,10 @@
 import { defineField, FieldType, RelationType, OnDeleteAction } from 'twenty-sdk/define';
 
+export const AI_TASK_OWNER_FIELD_UNIVERSAL_IDENTIFIER =
+  '6ccba282-8d22-40c1-a6b4-cf5ccdfcd199';
+
 export default defineField({
-  universalIdentifier: '6ccba282-8d22-40c1-a6b4-cf5ccdfcd199',
+  universalIdentifier: AI_TASK_OWNER_FIELD_UNIVERSAL_IDENTIFIER,
   name: 'owner',
   label: 'Owner',
   type: FieldType.RELATION,

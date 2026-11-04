@@ -97,9 +97,16 @@ describe('Stage 3 worker journal contract', () => {
   const operationKey = `stage3-operation-${suffix}`;
   const adminOnlyOperationKey = `stage3-applied-${suffix}`;
   const terminalRunKey = `stage3-terminal-run-${suffix}`;
+  const unassignedTaskTitle = `Stage 3 unassigned ${suffix}`;
+  const orphanProjectName = `Stage 3 orphan ${suffix}`;
+  const approvedProjectName = `Stage 3 approved ${suffix}`;
   let adminToken: string;
   let workerRoleId: string;
+  let workspaceMemberId: string;
+  let approvedProjectId: string;
+  let orphanProjectId: string;
   let taskId: string;
+  let unassignedTaskId: string;
   let runId: string;
   let terminalRunId: string;
   let journalId: string;
@@ -107,6 +114,21 @@ describe('Stage 3 worker journal contract', () => {
 
   beforeAll(async () => {
     adminToken = await getAdminToken();
+
+    const workspaceMembers = expectNoGraphQLErrors(
+      await request<{
+        workspaceMembers: { edges: Array<{ node: { id: string } }> };
+      }>(
+        graphQLEndpoint,
+        `query FindAdminMember($filter: WorkspaceMemberFilterInput!) {
+          workspaceMembers(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { userEmail: { eq: adminEmail } } },
+        adminToken,
+      ),
+    );
+    expect(workspaceMembers.workspaceMembers.edges).toHaveLength(1);
+    workspaceMemberId = workspaceMembers.workspaceMembers.edges[0].node.id;
 
     const roles = expectNoGraphQLErrors(
       await request<{ getRoles: Array<{ id: string; label: string }> }>(
@@ -122,17 +144,59 @@ describe('Stage 3 worker journal contract', () => {
     expect(workerRole).toBeDefined();
     workerRoleId = workerRole!.id;
 
+    const approvedProject = expectNoGraphQLErrors(
+      await request<{ createProject: { id: string } }>(
+        graphQLEndpoint,
+        `mutation CreateApprovedProject($data: ProjectCreateInput!) {
+          createProject(data: $data) { id }
+        }`,
+        { data: { name: approvedProjectName, executionEnabled: true } },
+        adminToken,
+      ),
+    );
+    approvedProjectId = approvedProject.createProject.id;
+
+    const orphanProject = expectNoGraphQLErrors(
+      await request<{ createProject: { id: string } }>(
+        graphQLEndpoint,
+        `mutation CreateOrphanProject($data: ProjectCreateInput!) {
+          createProject(data: $data) { id }
+        }`,
+        { data: { name: orphanProjectName } },
+        adminToken,
+      ),
+    );
+    orphanProjectId = orphanProject.createProject.id;
+
     const task = expectNoGraphQLErrors(
       await request<{ createAiTask: { id: string } }>(
         graphQLEndpoint,
         `mutation CreateTask($data: AiTaskCreateInput!) {
           createAiTask(data: $data) { id }
         }`,
-        { data: { title: taskTitle } },
+        {
+          data: {
+            title: taskTitle,
+            ownerId: workspaceMemberId,
+            projectId: approvedProjectId,
+          },
+        },
         adminToken,
       ),
     );
     taskId = task.createAiTask.id;
+
+    const unassignedTask = expectNoGraphQLErrors(
+      await request<{ createAiTask: { id: string } }>(
+        graphQLEndpoint,
+        `mutation CreateUnassignedTask($data: AiTaskCreateInput!) {
+          createAiTask(data: $data) { id }
+        }`,
+        { data: { title: unassignedTaskTitle, projectId: approvedProjectId } },
+        adminToken,
+      ),
+    );
+    unassignedTaskId = unassignedTask.createAiTask.id;
 
     const run = expectNoGraphQLErrors(
       await request<{ createAiRun: { id: string } }>(
@@ -200,6 +264,30 @@ describe('Stage 3 worker journal contract', () => {
         adminToken,
       );
     }
+    if (adminToken && unassignedTaskId) {
+      await request(
+        graphQLEndpoint,
+        'mutation DeleteUnassignedTask($id: UUID!) { destroyAiTask(id: $id) { id } }',
+        { id: unassignedTaskId },
+        adminToken,
+      );
+    }
+    if (adminToken && approvedProjectId) {
+      await request(
+        graphQLEndpoint,
+        'mutation DeleteApprovedProject($id: UUID!) { destroyProject(id: $id) { id } }',
+        { id: approvedProjectId },
+        adminToken,
+      );
+    }
+    if (adminToken && orphanProjectId) {
+      await request(
+        graphQLEndpoint,
+        'mutation DeleteOrphanProject($id: UUID!) { destroyProject(id: $id) { id } }',
+        { id: orphanProjectId },
+        adminToken,
+      );
+    }
   });
 
   it('allows Worker Journal writes and verifies operation-key conflicts', async () => {
@@ -230,6 +318,76 @@ describe('Stage 3 worker journal contract', () => {
       ),
     );
     journalId = created.createAiRunJournal.id;
+
+    const assignedTask = expectNoGraphQLErrors(
+      await request<{ aiTasks: { edges: Array<{ node: { id: string } }> } }>(
+        graphQLEndpoint,
+        `query ReadAssignedTask($filter: AiTaskFilterInput!) {
+          aiTasks(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { id: { eq: taskId } } },
+        workerApiKey,
+      ),
+    );
+    expect(assignedTask.aiTasks.edges.map(({ node }) => node.id)).toContain(taskId);
+
+    const unassignedTask = expectNoGraphQLErrors(
+      await request<{ aiTasks: { edges: Array<{ node: { id: string } }> } }>(
+        graphQLEndpoint,
+        `query ReadUnassignedTask($filter: AiTaskFilterInput!) {
+          aiTasks(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { id: { eq: unassignedTaskId } } },
+        workerApiKey,
+      ),
+    );
+    expect(unassignedTask.aiTasks.edges).toHaveLength(0);
+
+    const approvedProject = expectNoGraphQLErrors(
+      await request<{ projects: { edges: Array<{ node: { id: string } }> } }>(
+        graphQLEndpoint,
+        `query ReadApprovedProject($filter: ProjectFilterInput!) {
+          projects(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { id: { eq: approvedProjectId } } },
+        workerApiKey,
+      ),
+    );
+    expect(approvedProject.projects.edges.map(({ node }) => node.id)).toContain(approvedProjectId);
+
+    const orphanProject = expectNoGraphQLErrors(
+      await request<{ projects: { edges: Array<{ node: { id: string } }> } }>(
+        graphQLEndpoint,
+        `query ReadOrphanProject($filter: ProjectFilterInput!) {
+          projects(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { id: { eq: orphanProjectId } } },
+        workerApiKey,
+      ),
+    );
+    expect(orphanProject.projects.edges).toHaveLength(0);
+
+    const terminalRun = expectNoGraphQLErrors(
+      await request<{ aiRuns: { edges: Array<{ node: { id: string } }> } }>(
+        graphQLEndpoint,
+        `query ReadTerminalRun($filter: AiRunFilterInput!) {
+          aiRuns(filter: $filter) { edges { node { id } } }
+        }`,
+        { filter: { id: { eq: terminalRunId } } },
+        workerApiKey,
+      ),
+    );
+    expect(terminalRun.aiRuns.edges).toHaveLength(0);
+
+    const taskRewrite = await request(
+      graphQLEndpoint,
+      `mutation RewriteTask($id: UUID!, $data: AiTaskUpdateInput!) {
+        updateAiTask(id: $id, data: $data) { id }
+      }`,
+      { id: taskId, data: { title: 'worker changed task' } },
+      workerApiKey,
+    );
+    expect(taskRewrite.errors).toBeDefined();
 
     const duplicate = await request(
       graphQLEndpoint,

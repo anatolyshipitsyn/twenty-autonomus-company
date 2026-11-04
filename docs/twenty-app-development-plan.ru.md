@@ -155,13 +155,15 @@
 ### Этап 6. Закрыть MVP-приёмку и оформить следующий объём
 
 - [x] Пройти применимые SAI для модели, разрешения, уникальных ключей, основного lifecycle, результата, приёмки, worker singleton и неизвестного исхода; записать evidence/Not verified в `docs/requirements/acceptance.md` и `acceptance.ru.md`.
-- [ ] Проверить доступы operator/worker и негативно подтвердить отсутствие доступа к чужим/неназначенным данным в пределах однопользовательского MVP.
+- [x] Проверить доступы operator/worker и негативно подтвердить отсутствие доступа к чужим/неназначенным данным в пределах однопользовательского MVP.
 - [ ] Выполнить согласованные lint/typecheck и `twenty app apply` по правилам app skill; затем сверить схему и UI в workspace.
 - [ ] Обновить README/SETUP отдельного app-пакета только командами и настройками без секретов.
 - [ ] Зафиксировать отложенные функции как следующий backlog: recovery/отмена, INPUT/APPROVAL, handoff, клиентская изоляция, Telegram, многопрофильность, Langfuse и расширенные SAI.
 - [ ] До включения любого отложенного пункта повторить compatibility/security gate и определить его критерии приёмки.
 
 **Готово, когда:** каждый применимый критерий имеет наблюдаемое evidence или явно отмечен как непроверенный; app синхронизирован в нужный workspace; следующий этап не расширен без отдельного решения.
+
+**E2E доступа Operator/Worker, 4 ноября 2026:** на изолированном workspace `http://localhost:3001` с ролью Orchestrator Worker прошёл integration test `src/__tests__/stage3.integration-test.ts` (1 test passed). Worker прочитал назначенную задачу и Project с `executionEnabled=true`; не прочитал задачу без owner, Project с execution disabled и terminal AiRun; попытка обновить AiTask вернула GraphQL error. Созданный на 5 минут API key был отозван; API readback подтвердил ноль активных ключей с именем теста. `yarn typecheck` и `yarn lint` прошли; `twenty app plan --json` для test workspace вернул `ok=true`, 0 действий и 0 diagnostics (изменения уже синхронизировал app-dev watcher). Workspace содержал admin и тестового Operator; тест проверял наличие/отсутствие owner, но не отказ задаче, принадлежащей другому member. Поэтому per-member и cross-client isolation остаются **Not verified** и не входят в доказанный однопользовательский scope. Operator role grants и отказ действия пользователя без Operator подтверждены отдельно. Точная версия server для этого прогона не записана. Worker по-прежнему может читать и обновлять любой Journal, включая APPLIED, через API.
 
 ## Контрольный сквозной сценарий
 
