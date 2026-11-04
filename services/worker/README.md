@@ -38,3 +38,21 @@ creation access; GitHub credentials stay out of the Codex child environment.
 The App Server protocol is generated from and pinned to Codex CLI 0.165.0.
 Execution remains disabled by default. Restart reconciliation and durable
 recovery for uncertain App Server or GitHub outcomes are not implemented yet.
+
+## Verifying a completed run
+
+In Twenty, open the task and its latest `AiRun` for the task's current
+`requestVersion`. Confirm the task is `WAITING_REVIEW` and the run is
+`SUCCEEDED`; this means the result is ready for operator review, not yet
+accepted. On the run, inspect `resultSummary`, `evidence`, `prUrl`, and
+`headCommit`: `evidence.draftPr` must be `true`, `evidence.checks` must be a
+non-empty list with every `passed` value `true`, and the PR URL and head commit
+must identify the draft PR and commit to review.
+
+Then open the matching `AiRunJournal` event. Verify it is `INBOUND` with
+`eventType=RESULT`, `state=APPLIED`, and matching `taskId`, `runId`, `runKey`,
+and current `requestVersion` in `payload`. The payload's `resultSummary`,
+`evidence`, PR URL, and head commit should agree with the run (the PR URL and
+head commit may have been saved earlier by `PR_CREATED`). Follow `prUrl` to
+review the draft PR and confirm its head commit matches `headCommit` before
+accepting the task in Twenty.
