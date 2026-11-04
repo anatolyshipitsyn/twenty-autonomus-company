@@ -85,22 +85,26 @@ export async function applyWorkerRunEvent(client: any, journal: any, task: any) 
       });
     }
   } else if (journal.eventType === AiRunJournalEventType.PR_CREATED) {
+    const checks = payload.evidence?.checks;
     if (
       run.status !== AiRunStatus.RUNNING || task.activeRunId !== run.id ||
-      payload.draftPr !== true ||
+      typeof payload.resultSummary !== 'string' || !payload.resultSummary.trim() ||
+      payload.evidence?.draftPr !== true || !Array.isArray(checks) || checks.length === 0 ||
+      checks.some((check: any) => check?.passed !== true) ||
       !/^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/.test(payload.prUrl ?? '') ||
       !/^[a-f0-9]{7,40}$/i.test(payload.headCommit ?? '')
     ) {
-      return finishJournal(client, journal, AiRunJournalState.REJECTED, { reason: 'PR_CREATED has invalid run identity, PR URL, or commit' });
+      return finishJournal(client, journal, AiRunJournalState.REJECTED, { reason: 'PR_CREATED requires a complete passing result bundle for the active run' });
     }
     await client.mutation({
       updateAiRun: {
         __args: {
           id: run.id,
           data: {
+            resultSummary: payload.resultSummary,
+            evidence: payload.evidence,
             prUrl: payload.prUrl,
             headCommit: payload.headCommit,
-            evidence: { ...(run.evidence ?? {}), draftPr: true },
           },
         },
         id: true,
@@ -117,9 +121,15 @@ export async function applyWorkerRunEvent(client: any, journal: any, task: any) 
       payload.evidence?.draftPr !== true ||
       !Array.isArray(checks) || checks.length === 0 || checks.some((check: any) => check?.passed !== true) ||
       !/^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/.test(prUrl ?? '') ||
-      !/^[a-f0-9]{7,40}$/i.test(headCommit ?? '')
+      !/^[a-f0-9]{7,40}$/i.test(headCommit ?? '') ||
+      (!replayedResult && (
+        run.resultSummary !== payload.resultSummary ||
+        stableStringify(run.evidence) !== stableStringify(payload.evidence) ||
+        run.prUrl !== prUrl ||
+        run.headCommit !== headCommit
+      ))
     ) {
-      return finishJournal(client, journal, AiRunJournalState.REJECTED, { reason: 'RESULT lacks summary, passing checks, draft PR, or head commit' });
+      return finishJournal(client, journal, AiRunJournalState.REJECTED, { reason: 'RESULT lacks a matching applied PR_CREATED checkpoint' });
     }
     if (!replayedResult) {
       await client.mutation({
@@ -128,10 +138,6 @@ export async function applyWorkerRunEvent(client: any, journal: any, task: any) 
             id: run.id,
             data: {
               status: AiRunStatus.SUCCEEDED,
-              resultSummary: payload.resultSummary,
-              evidence: payload.evidence,
-              prUrl,
-              headCommit,
               finishedAt: new Date().toISOString(),
             },
           },

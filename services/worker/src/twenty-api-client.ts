@@ -274,9 +274,28 @@ export class TwentyApiClient implements OnModuleInit {
     });
   }
 
+  async recordPullRequestCreated(
+    command: StartCommand,
+    result: {
+      resultSummary: string;
+      evidence: { draftPr: true; checks: Array<{ name: string; passed: true; details?: string }> };
+      prUrl: string;
+      headCommit: string;
+    },
+  ): Promise<void> {
+    await this.createInboundEvent(command, 'PR_CREATED', {
+      protocolVersion: 1,
+      requestVersion: command.payload.requestVersion,
+      resultSummary: result.resultSummary.slice(0, 8000),
+      evidence: result.evidence,
+      prUrl: result.prUrl,
+      headCommit: result.headCommit,
+    });
+  }
+
   async waitForEventApplication(
     command: StartCommand,
-    eventType: 'RESULT',
+    eventType: 'PR_CREATED' | 'RESULT',
     timeoutMs = 120_000,
   ): Promise<'APPLIED' | 'REJECTED'> {
     const operationKey = `${command.runKey}:${eventType}`;
@@ -299,7 +318,7 @@ export class TwentyApiClient implements OnModuleInit {
 
   private async createInboundEvent(
     command: StartCommand,
-    eventType: 'STARTED' | 'ERROR' | 'RESULT',
+    eventType: 'STARTED' | 'ERROR' | 'PR_CREATED' | 'RESULT',
     payload: Record<string, unknown>,
   ): Promise<void> {
     const operationKey = `${command.runKey}:${eventType}`;

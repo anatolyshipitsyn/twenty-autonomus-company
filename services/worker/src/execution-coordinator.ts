@@ -52,6 +52,11 @@ export class ExecutionCoordinator {
         throw new Error(`Codex turn ended with status ${completion.turn.status}; no successful result will be published.`);
       }
       const result = await this.results.publish(workspace, command, completion.assistantMessage);
+      await this.twenty.recordPullRequestCreated(command, result);
+      const prCreatedApplied = await this.twenty.waitForEventApplication(command, 'PR_CREATED');
+      if (prCreatedApplied !== 'APPLIED') {
+        throw new Error('Twenty rejected PR_CREATED; RESULT will not be submitted.');
+      }
       await this.twenty.recordResult(command, result);
       resultSubmitted = true;
       const applied = await this.twenty.waitForEventApplication(command, 'RESULT');
