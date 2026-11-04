@@ -35,6 +35,16 @@ cannot be confirmed leave the run locked for manual reconciliation. The host
 must have `gh` authenticated for the allowlisted repository with push and PR
 creation access; GitHub credentials stay out of the Codex child environment.
 
+## Audit order for successful results
+
+For a successful run, inspect the `AiRun` first: Twenty applies the inbound
+`RESULT` payload by persisting `resultSummary`, `evidence` (passing `checks`
+and `draftPr: true`), `prUrl`, and `headCommit` to the run before it marks that
+inbound Journal event `APPLIED`. Then verify the inbound `RESULT` Journal
+record is `APPLIED` and the task status is `WAITING_REVIEW` in Twenty. The
+worker waits for the Journal application result before releasing its in-process
+lock.
+
 The App Server protocol is generated from and pinned to Codex CLI 0.165.0.
 Execution remains disabled by default. Restart reconciliation and durable
 recovery for uncertain App Server or GitHub outcomes are not implemented yet.
