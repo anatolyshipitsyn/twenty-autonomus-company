@@ -1,4 +1,11 @@
-type ReviewAction = 'ACCEPT' | 'REWORK';
+import { AiRunJournalDirection } from 'src/types/ai-run-journal-direction';
+import { AiRunJournalEventType } from 'src/types/ai-run-journal-event-type';
+import { AiRunJournalState } from 'src/types/ai-run-journal-state';
+import { AiRunStatus } from 'src/types/ai-run-status';
+import { AiTaskStatus } from 'src/types/ai-task-status';
+import { OperatorTaskAction } from 'src/types/operator-task-action';
+
+type ReviewAction = OperatorTaskAction.ACCEPT | OperatorTaskAction.REWORK;
 
 export async function reviewTask(
   client: any,
@@ -6,7 +13,7 @@ export async function reviewTask(
   action: ReviewAction,
   actorWorkspaceMemberId: string,
 ) {
-  if (action === 'REWORK' && task.status === 'READY' && !task.activeRunId) {
+  if (action === OperatorTaskAction.REWORK && task.status === AiTaskStatus.READY && !task.activeRunId) {
     return { ok: true, taskId: task.id, action, duplicate: true };
   }
 
@@ -43,9 +50,9 @@ export async function reviewTask(
   });
   const decision = (decisionResponse as any).aiRunJournals?.edges?.[0]?.node;
 
-  if (action === 'ACCEPT') {
-    if (task.status === 'DONE') return { ok: true, taskId: task.id, action, duplicate: true };
-    if (task.status !== 'WAITING_REVIEW' || run.status !== 'SUCCEEDED') {
+  if (action === OperatorTaskAction.ACCEPT) {
+    if (task.status === AiTaskStatus.DONE) return { ok: true, taskId: task.id, action, duplicate: true };
+    if (task.status !== AiTaskStatus.WAITING_REVIEW || run.status !== AiRunStatus.SUCCEEDED) {
       throw new Error('Only the latest successful result awaiting review can be accepted.');
     }
     const checks = run.evidence?.checks;
@@ -62,18 +69,18 @@ export async function reviewTask(
     }
     if (!decision) await createDecision(client, task, run, operationKey, action, actorWorkspaceMemberId);
     await client.mutation({
-      updateAiTask: { __args: { id: task.id, data: { status: 'DONE' } }, id: true },
+      updateAiTask: { __args: { id: task.id, data: { status: AiTaskStatus.DONE } }, id: true },
     });
     await markDecisionApplied(client, operationKey);
     return { ok: true, taskId: task.id, action };
   }
 
-  if (!['ERROR', 'WAITING_REVIEW'].includes(task.status)) {
+  if (![AiTaskStatus.ERROR, AiTaskStatus.WAITING_REVIEW].includes(task.status)) {
     throw new Error('Only an errored task or a reviewed result can be sent for rework.');
   }
   if (
-    (task.status === 'ERROR' && run.status !== 'ERROR') ||
-    (task.status === 'WAITING_REVIEW' && run.status !== 'SUCCEEDED')
+    (task.status === AiTaskStatus.ERROR && run.status !== AiRunStatus.ERROR) ||
+    (task.status === AiTaskStatus.WAITING_REVIEW && run.status !== AiRunStatus.SUCCEEDED)
   ) {
     throw new Error('The task status does not match the latest run outcome.');
   }
@@ -84,7 +91,7 @@ export async function reviewTask(
       __args: {
         id: task.id,
         data: {
-          status: 'READY',
+          status: AiTaskStatus.READY,
           requestVersion,
           readyAt: new Date().toISOString(),
           activeRunId: null,
@@ -115,9 +122,9 @@ async function createDecision(
           taskId: task.id,
           runId: run.id,
           runKey: run.runKey,
-          direction: 'INBOUND',
-          eventType: action,
-          state: 'PENDING',
+          direction: AiRunJournalDirection.INBOUND,
+          eventType: action === OperatorTaskAction.ACCEPT ? AiRunJournalEventType.ACCEPT : AiRunJournalEventType.REWORK,
+          state: AiRunJournalState.PENDING,
           receivedAt: new Date().toISOString(),
           payload: { requestVersion: task.requestVersion, actorWorkspaceMemberId },
         },
@@ -135,12 +142,12 @@ async function markDecisionApplied(client: any, operationKey: string) {
     },
   });
   const decision = (response as any).aiRunJournals?.edges?.[0]?.node;
-  if (decision?.id && decision.state !== 'APPLIED') {
+  if (decision?.id && decision.state !== AiRunJournalState.APPLIED) {
     await client.mutation({
       updateAiRunJournal: {
         __args: {
           id: decision.id,
-          data: { state: 'APPLIED', appliedAt: new Date().toISOString() },
+          data: { state: AiRunJournalState.APPLIED, appliedAt: new Date().toISOString() },
         },
         id: true,
       },

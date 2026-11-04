@@ -1,7 +1,9 @@
 import { isCanonicalGitHubRepositoryUrl } from 'src/utils/is-canonical-github-repository-url.util';
 
+import { AiTaskStatus } from 'src/types/ai-task-status';
+
 export async function submitTask(client: any, task: any) {
-  if (task.status === 'READY' && Number(task.requestVersion) > 0) {
+  if (task.status === AiTaskStatus.READY && Number(task.requestVersion) > 0) {
     return { ok: true, taskId: task.id, action: 'SUBMIT', duplicate: true };
   }
   if (task.status !== 'TODO') throw new Error('Only TODO tasks can be submitted.');
@@ -22,7 +24,7 @@ export async function submitTask(client: any, task: any) {
       __args: {
         id: task.id,
         data: {
-          status: 'READY',
+          status: AiTaskStatus.READY,
           requestVersion,
           readyAt: new Date().toISOString(),
           waitingReason: null,

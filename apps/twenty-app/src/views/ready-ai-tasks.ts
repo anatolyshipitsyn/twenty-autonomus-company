@@ -1,4 +1,5 @@
 import { defineView, ViewFilterOperand } from 'twenty-sdk/define';
+import { AiTaskStatus } from 'src/types/ai-task-status';
 
 export default defineView({
   universalIdentifier: 'e4a11a8d-ce3b-4f2a-a5e4-458c3a4a8f9f',
@@ -35,7 +36,7 @@ export default defineView({
       universalIdentifier: 'fb0c180d-975f-4ce7-a170-a2692345c9d2',
       fieldMetadataUniversalIdentifier: '28f8a0f4-0c44-4750-8261-280ba2a3993f',
       operand: ViewFilterOperand.IS,
-      value: ['READY'],
+      value: [AiTaskStatus.READY],
     },
   ],
 });

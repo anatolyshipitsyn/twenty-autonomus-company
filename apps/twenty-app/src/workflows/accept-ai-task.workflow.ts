@@ -11,6 +11,7 @@ import {
   AI_TASK_OBJECT_UNIVERSAL_IDENTIFIER,
   OPERATOR_TASK_ACTION_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { OperatorTaskAction } from 'src/types/operator-task-action';
 
 export default defineWorkflow({
   universalIdentifier: ACCEPT_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
@@ -32,7 +33,7 @@ export default defineWorkflow({
         name: 'Validate and accept result',
         type: 'LOGIC_FUNCTION',
         logicFunctionUniversalIdentifier: OPERATOR_TASK_ACTION_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
-        input: { taskId: '{{trigger.payload.id}}', action: 'ACCEPT' },
+        input: { taskId: '{{trigger.payload.id}}', action: OperatorTaskAction.ACCEPT },
         nextStepIds: [],
       },
     ],

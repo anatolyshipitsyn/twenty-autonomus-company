@@ -1,0 +1,7 @@
+export enum AiRunStatus {
+  PENDING = 'PENDING',
+  RUNNING = 'RUNNING',
+  SUCCEEDED = 'SUCCEEDED',
+  ERROR = 'ERROR',
+  UNKNOWN = 'UNKNOWN',
+}
