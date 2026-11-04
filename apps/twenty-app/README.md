@@ -1,13 +1,23 @@
 # Autonomus Company
 
-Локальное Twenty-приложение для разработки оркестратора автономной компании. Сейчас каркас содержит страницу приложения, пункт навигации и health-check функцию.
+Standalone Twenty app package for the local autonomous-company orchestrator. It defines the Project, AI Task, AI Run, and AI Run Journal records; the Operator and Worker roles; and the workflows used by the current MVP. The NestJS worker and Codex App Server integration are separate components and are not implemented in this app package.
 
-## Локальная разработка
+## Local setup
 
-Инструкции по установке зависимостей, входу в локальный workspace и синхронизации находятся в [SETUP.md](SETUP.md).
+Use [SETUP.md](SETUP.md) for Node/Yarn and Twenty CLI versions, local workspace login, Compose behavior, worker-key settings, and safe sync commands. The local server is started from the repository root using [docs/local-environment.md](../../docs/local-environment.md).
 
-Локальный сервер Twenty запускается из корня этого репозитория по [инструкции локального окружения](../../docs/local-environment.md).
+## App checks
 
-## Синхронизация
+From this directory:
 
-Корневой `docker compose up` автоматически запускает watcher с `--create` для первой регистрации и `--no-prune`, чтобы не удалять определения из workspace при их отсутствии в исходниках. Ручную одноразовую синхронизацию выполняют через `twenty app apply --remote autonomus-local`.
+```bash
+yarn lint
+yarn typecheck
+yarn test:unit
+```
+
+Run the full integration suite only against an isolated test workspace and provide its URL and local test credentials through environment variables. Do not run it against a development workspace.
+
+## Sync
+
+The root Compose stack starts an `app-dev` watcher for local development. For a bounded sync with `twenty app apply`, stop that watcher first; see [SETUP.md](SETUP.md#bounded-sync).

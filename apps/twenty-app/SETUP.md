@@ -2,58 +2,67 @@
 
 ## Требования
 
-- Локальный Twenty из этого репозитория запущен по адресу `http://localhost:3000`. См. [локальное окружение](../../docs/local-environment.md).
-- Node.js версии из `.nvmrc` (`24.5.0` или совместимая версия Node 24) и Yarn 4.18.1.
-- Standalone CLI Twenty 2.54.3 или совместимая версия `>=2.54.0`.
+- Локальный Twenty из корня репозитория доступен на `http://localhost:3000`; инструкция — [локальное окружение](../../docs/local-environment.md).
+- Node.js версии из `.nvmrc` и Yarn 4.18.1.
+- Twenty CLI 2.54.3 для закреплённого локального сценария; package требует `>=2.54.0`.
 
-## Установка и подключение
+## Установка и CLI remote
 
-Для запуска watcher через Compose хостовая установка CLI и CLI-аутентификация не нужны. Для запуска CLI-команд непосредственно на хосте:
+Из этого каталога приложения:
 
 ```bash
 nvm install
 nvm use
 corepack yarn install
-npm install -g twenty
+npm install -g twenty@2.54.3
 twenty auth login --url http://localhost:3000 --name autonomus-local
 ```
 
-If `twenty` is not found after installation, make sure the active Node version's global npm `bin` directory is in `PATH`; switching to the app's `.nvmrc` with `nvm use` normally does this.
+CLI хранит remote и авторизацию в пользовательской конфигурации. Не помещайте API keys или пароли в manifest, исходники или команды, сохраняемые в Git. Значения для локального окружения держите в корневом игнорируемом `.env`.
 
-Эти команды сохраняют remote `autonomus-local` в пользовательской конфигурации CLI и нужны только для ручных команд Twenty на хосте.
+## Compose watcher
 
-## Синхронизация с локальным workspace
-
-Корневой Compose поднимет Twenty и контейнер `app-dev`, который установит зависимости, войдёт как локальный администратор и запустит watcher:
+Из корня репозитория поднимите локальный стек:
 
 ```bash
 docker compose up -d --wait
 docker compose logs -f app-dev
 ```
 
-Контейнер монтирует исходники `apps/twenty-app`, поэтому изменения файлов синхронизируются с Twenty без пересборки образа сервера. Для входа он использует `DEFAULT_ADMIN_EMAIL` и `DEFAULT_ADMIN_PASSWORD` из корневого `.env` (либо значения по умолчанию из Compose). На пустом томе базы те же значения устанавливает init-скрипт. Поэтому после `docker compose down -v` новый workspace и watcher снова поднимутся без сохранённой OAuth-сессии. Контейнер автоматически перезапускает watcher перед истечением access token и получает новый.
+`app-dev` монтирует `apps/twenty-app`, входит как локальный администратор и синхронизирует изменения в `http://localhost:3000`. Для входа используются `DEFAULT_ADMIN_EMAIL` и `DEFAULT_ADMIN_PASSWORD` из корневого `.env` (или локальные defaults Compose). На пустом томе базы init-скрипт создаёт администратора с теми же настройками. Существующий том сохраняет текущую учётную запись; изменение `.env` само по себе не меняет пароль в базе. Контейнер обновляет access token и перезапускает watcher до его истечения.
 
-Watcher запускается с `--no-prune`, чтобы удаление определения из исходников само по себе не удаляло его из workspace. Не запускайте параллельно отдельный `twenty app apply`. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации.
+Watcher запускается с `--create --no-prune`: первая синхронизация регистрирует приложение, а отсутствующие в исходниках определения автоматически не удаляются. Откройте `http://localhost:3000` и выберите **Autonomus Company** в навигации. Не запускайте `twenty app apply` параллельно с watcher.
 
-`app-dev` получает свежий токен при каждом старте. Если вход не проходит, проверьте, что email и пароль в `.env` совпадают с учётной записью локального администратора. После смены пароля в уже созданном workspace измените `DEFAULT_ADMIN_PASSWORD` в `.env` на тот же пароль и пересоздайте `app-dev`.
+## Bounded sync
 
-Для интеграционных запросов от имени worker создайте отдельный API key в **Settings → Developers → API** и назначьте ему роль **Orchestrator Worker** через **Settings → Members → Roles → Orchestrator Worker → Assignment → Assign to API key**. Положите ключ в корневой, игнорируемый Git файлом `.env`:
+Для предсказуемой одноразовой синхронизации используйте Twenty CLI из каталога приложения. Сначала остановите watcher:
 
-```dotenv
-TWENTY_API_KEY=<worker-api-key>
+```bash
+docker compose stop app-dev
+cd apps/twenty-app
+twenty app plan --remote autonomus-local --json
+twenty app apply --remote autonomus-local --json
+cd ../..
+docker compose start app-dev
 ```
 
-Compose передаёт эту переменную в `app-dev`; CLI remote `autonomus-local` продолжает использовать отдельный токен администратора для синхронизации app. Пересоздайте только `app-dev`, чтобы обновить его окружение:
+Plan показывает ожидаемые metadata changes; apply выполняет build и sync. Для локальной разработки используйте remote `autonomus-local`, а перед любым другим target проверьте его URL и workspace. Не применяйте этот сценарий к production без отдельного решения и проверки target.
+
+## Worker API key
+
+Для локального Worker API доступа создайте отдельный API key и назначьте роль **Orchestrator Worker** в Twenty: **Settings → Members → Roles → Orchestrator Worker → Assignment → Assign to API key**. Передайте ключ через `TWENTY_API_KEY` в корневом `.env`; Compose передаст его в `app-dev` для интеграционных запросов. Чтобы обновить окружение контейнера после изменения `.env`:
 
 ```bash
 docker compose up -d --no-deps app-dev
 ```
 
-Значение `TWENTY_API_KEY` не добавляйте в app manifest, исходники или Git. Роль Worker может создавать и изменять записи AiRunJournal, включая APPLIED; это ограничение объектных прав Twenty. Она не может обновлять AiTask и AiRun. Поэтому ключ храните только как доверенный backend secret: обработчик должен сверять operationKey и не менять уже применённый результат, хотя Twenty не блокирует прямое изменение Journal через API. Для интеграционного теста используйте изолированный тестовый workspace и передавайте URL сервера через `TWENTY_API_URL`.
+Worker может читать назначенные задачи, Projects с включённым `executionEnabled` и активные AiRuns. Он не может обновлять AiTask или AiRun. Из-за модели прав Twenty тот же `canUpdate` доступ к Journal разрешает Worker обновлять существующие записи, включая APPLIED; храните ключ только как доверенный backend secret. Обработчик должен сверять `operationKey` и сохранять уже применённый payload/outcome. Row-level правила скрывают неназначенные задачи и Projects с выключенным execution, но не обеспечивают per-member или multi-client isolation.
 
-## Проверки
+Для полной интеграционной проверки используйте изолированный Twenty workspace. Передайте `TWENTY_API_URL`, `TWENTY_API_KEY`, `TWENTY_ADMIN_EMAIL`, `TWENTY_ADMIN_PASSWORD` и `TWENTY_AUTH_ORIGIN` через локальное окружение; не записывайте реальные значения в файлы, попадающие в Git.
 
-По отдельному запросу доступны скрипты пакета:
+## Локальные проверки
+
+Из каталога приложения:
 
 ```bash
 yarn lint
@@ -61,4 +70,4 @@ yarn typecheck
 yarn test:unit
 ```
 
-Полный integration test требует отдельного тестового workspace; не запускайте его против локального рабочего workspace.
+Полный integration suite требует установленного изолированного test workspace и credentials только в локальном окружении. Не запускайте его против рабочего dev workspace.
