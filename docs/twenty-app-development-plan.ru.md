@@ -126,11 +126,21 @@
 ### Этап 5. Согласовать контракт с worker и подключить минимальный цикл
 
 - [x] Зафиксировать точные поля и payload `DISPATCH_REQUEST`/START/STARTED/RESULT/ERROR, operationKey/runKey, версии и ACK по реальной schema приложения; повтор запроса не должен создавать второй run.
-- [ ] Подтвердить, что worker читает только сохранённые разрешённые команды через поддерживаемый API Twenty; прямой SQL запрещён.
-- [ ] Проверить запуск одного разрешённого run и запись `STARTED` с threadId/turnId до применения RUNNING.
+- [x] Подтвердить, что worker читает только сохранённые разрешённые команды через поддерживаемый API Twenty; прямой SQL запрещён.
+- [x] Проверить запуск одного разрешённого run и запись `STARTED` с threadId/turnId до применения RUNNING.
 - [ ] Проверить результат: worker сначала сохраняет evidence, summary, draft PR URL/headCommit, затем RESULT; Twenty переводит задачу в WAITING/REVIEW.
 - [ ] Проверить, что отсутствие ответа, disconnect или PENDING неизвестного исхода блокируют следующую задачу и не порождают новый Codex turn автоматически.
 - [ ] Проверить контролируемую ошибку и ручное разрешение новой попытки с новым runKey.
+
+**Проверка API чтения, 4 ноября 2026:** `services/worker` читает через Twenty GraphQL только сохранённые `OUTBOUND / START / PENDING` записи Journal и валидирует протокол v1, ключи и snapshot. На изолированном Compose workspace `http://localhost:3001` временный API key с ролью Orchestrator Worker прочитал fixture START по `AiRunJournalFilterInput`; запрос с `INBOUND` fixture исключил. Затем собранный NestJS poller увидел ту же сохранённую команду. Fixture и временный key отозваны/удалены. Прямого SQL-клиента нет; Codex не запускался и новые Journal-записи worker не создавались. Не проверены pagination свыше 100 записей, ACK, рестарт и Codex App Server execution.
+
+**Реализация запуска, 4 ноября 2026:** добавлен App Server клиент с протоколом, сгенерированным из Codex CLI `0.165.0`, проверкой версии и минимальным дочерним environment. Исполнение по умолчанию выключено; при включении проверяются repository URL, base ref, чистота Git workspace и его origin/branch. Перед `turn/start` worker сохраняет `THREAD_CREATED` и threadId в исходной START-записи; после получения turnId создаёт `STARTED`. Turn ограничен writable root workspace и выключенным network access. Сборка TypeScript проходит.
+
+**E2E-проверка STARTED, 4 ноября 2026:** в изолированном workspace `http://localhost:3001` Operator подал fixture-задачу; worker с временным ключом роли Orchestrator Worker прочитал только сохранённую START, создал Codex thread/turn и записал `STARTED` с обоими идентификаторами. Twenty применил событие: Journal стал `APPLIED`, а AiRun и задача перешли в `RUNNING`; Codex turn завершился. Для проверки использовался чистый временный Git workspace с разрешённым repository URL. Временный ключ отозван, временный workspace и fixture-записи удалены. Для вызова Twenty logic function из контейнера worker потребовался тестовый Compose override `SERVER_URL=http://server:3000`: `localhost:3000` внутри worker указывал на сам worker. Основной workspace на `localhost:3000` не затрагивался. E2E-проверка RESULT ещё не выполнена; recovery и повтор после неизвестного исхода также остаются незавершёнными.
+
+**Подготовка RESULT, 4 ноября 2026:** worker теперь собирает финальный ответ App Server, запускает `lint`, `typecheck`, `test:unit` app package и `build` worker package, создаёт детерминированную ветку, draft PR и только затем сохраняет RESULT в Journal. Worker ждёт `APPLIED`/`REJECTED` от Twenty; неизвестный исход push/PR оставляет run заблокированным без автоматического ERROR или повтора. Пользователь выбрал package scripts репозитория. Build worker, app lint/typecheck и app unit script прошли локально. E2E с реальным PR и применением RESULT в изолированном Twenty workspace ещё не выполнен.
+
+**Изолированный workspace:** app sync потребовал внутренний `SERVER_URL=http://localhost:3000`, чтобы signed upload URL был достижим из общей network namespace `server/app-dev`; опубликованный host port остаётся `3001`. В этом workspace `twenty app plan` показал 436 create, 0 update/delete, затем приложение синхронизировалось; diagnostics 0.
 
 **Готово, когда:** end-to-end от явной подачи до принятого результата проходит на локальном окружении, а доказанные ошибки/неопределённые исходы не приводят к незаметному повтору.
 

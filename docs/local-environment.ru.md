@@ -2,7 +2,7 @@
 
 Стандартный Compose запускает закреплённый upstream-образ Twenty, PostgreSQL, Redis и worker Twenty. Новый том PostgreSQL инициализируется из локального снимка базы, в который входят workspace, учётная запись администратора и тестовый участник Orchestrator Operator.
 
-Этот Compose не запускает orchestrator worker или Codex App Server. Выбранная интеграция NestJS/Codex будет отдельным компонентом; в этом checkout она пока не реализована.
+Этот Compose запускает только серверный worker самого Twenty. NestJS orchestrator worker реализован отдельно в `services/worker` и не включён в Compose. Его Codex execution выключен по умолчанию (`CODEX_ENABLED=true` включает его отдельно); перед запуском требуются разрешённый чистый Git workspace и три значения allowlist. Worker собирает summary, запускает package checks, публикует draft PR и отправляет RESULT; восстановление после неопределённого исхода App Server/GitHub пока не реализовано.
 
 ## Запуск
 
