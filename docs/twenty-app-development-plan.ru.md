@@ -158,7 +158,7 @@
 - [x] Проверить доступы operator/worker и негативно подтвердить отсутствие доступа к чужим/неназначенным данным в пределах однопользовательского MVP.
 - [x] Выполнить согласованные lint/typecheck и `twenty app apply` по правилам app skill; затем сверить схему и UI в workspace.
 - [x] Обновить README/SETUP отдельного app-пакета только командами и настройками без секретов.
-- [ ] Зафиксировать отложенные функции как следующий backlog: recovery/отмена, INPUT/APPROVAL, handoff, клиентская изоляция, Telegram, многопрофильность, Langfuse и расширенные SAI.
+- [x] Зафиксировать отложенные функции как следующий backlog: recovery/отмена, INPUT/APPROVAL, handoff, клиентская изоляция, Telegram, многопрофильность, Langfuse и расширенные SAI.
 - [ ] До включения любого отложенного пункта повторить compatibility/security gate и определить его критерии приёмки.
 
 **Готово, когда:** каждый применимый критерий имеет наблюдаемое evidence или явно отмечен как непроверенный; app синхронизирован в нужный workspace; следующий этап не расширен без отдельного решения.
@@ -168,6 +168,23 @@
 **Проверка apply и UI, 4 ноября 2026:** на test workspace выполнен `twenty app apply --json` с CLI 2.54.3; завершены build/installation/upload/sync/client generation, 0 metadata actions, 0 diagnostics. До этого read-only plan показал 0 действий. После apply проверены в UI `http://localhost:3001` страницы **Projects** (`all-project`, Name/Repository URL/Base ref/Execution enabled) и **AI Tasks** (`all-ai-task`, Title/Status/Priority/Project); обе открылись с существующими записями. Затем `twenty app typecheck --json` завершился `ok=true`, diagnostics 0, и `yarn lint` завершился без warnings/errors.
 
 **Документация app-пакета, 4 ноября 2026:** `apps/twenty-app/README.md` и `SETUP.md` описывают версии Node/Yarn/CLI, workspace login, Compose watcher и безопасный bounded apply без параллельного watcher. Worker key и admin login представлены только именами переменных; значения остаются в локальном `.env` и CLI user config. В README/SETUP нет реальных API keys или паролей.
+
+## Следующий backlog (вне текущего MVP)
+
+Список сохраняет отложенный объём из [статуса требований MVP](requirements.ru.md#статус-требований-для-mvp). Наличие пункта не включает его в текущую реализацию и не меняет статусы приёмки; до начала каждого пункта нужно выполнить compatibility/security gate и определить критерии приёмки из следующего пункта этапа 6.
+
+| Порядок | Backlog item | Объём и критерии |
+| --- | --- | --- |
+| 1 | Recovery и отмена | Durable reconciliation Twenty Journal ↔ Codex thread/turn ↔ GitHub/worktree; подтверждённая остановка tools; безопасное продолжение либо WAITING/RECOVERY без нового turn. REQ-27–30, OPS-09–12; SAI-06–10, SAI-21, SAI-27. |
+| 2 | INPUT/APPROVAL | Адресованные вопросы, авторизация ответа, различие allow/deny, dedup и stale checks; продолжать только поддержанный активный approval/continuation того же run. REQ-07, REQ-15–16, OPS-18; SAI-03, SAI-11, SAI-13, SAI-17. |
+| 3 | Несколько профилей | Версионированный allowlist профилей и worker routing; до START закрепить профиль/config в snapshot; ручное решение по неизвестному профилю. REQ-05–10; SAI-16, SAI-25. |
+| 4 | Handoff | Последовательная передача A → B в том же task/run/worktree после подтверждённого завершения предыдущего turn/tools; сохранить assignmentVersion, контекст и бюджет. REQ-11–13; SAI-26, SAI-28. |
+| 5 | Клиентская изоляция | Индивидуальная identity, server-enforced client scope на UI/API/search и связанных данных; клиент только видит разрешённые поля и отвечает на адресованный INPUT. REQ-43, OPS-18; SAI-12, SAI-17, SAI-19, SAI-28. |
+| 6 | Telegram | Дополнительный транспорт только для адресованных вопросов/ответов; проверенная личная привязка, private chat, отзываемые права, общий dedup/Journal с Twenty и secret storage для bot token. REQ-43, OPS-18; SAI-12–13, SAI-17, SAI-28. |
+| 7 | Langfuse и аналитика | Асинхронный экспорт очищенных traces/versions/review facts и delivery checkpoints; известная/неизвестная стоимость; сбой аналитики не блокирует lifecycle. REQ-37–41, OPS-15–17; SAI-22–23. |
+| 8 | Расширенные SAI | Закрыть оставшиеся Not verified сценарии полного сквозного приёма, concurrency/idempotency, quotas, backup/restore, retention, sandbox/secrets, ambiguous GitHub outcomes и runtime compatibility по [acceptance ledger](requirements/acceptance.ru.md). Никакое evidence не наследовать без повторной проверки изменённой версии/конфигурации. |
+
+Это порядок планирования, а не срок или разрешение на реализацию. Новые функции остаются выключенными/не реализованными, пока отдельная задача не пройдёт compatibility/security gate и не зафиксирует проверяемые acceptance criteria.
 
 ## Контрольный сквозной сценарий
 
