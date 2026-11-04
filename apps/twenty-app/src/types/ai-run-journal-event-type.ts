@@ -1,0 +1,11 @@
+export enum AiRunJournalEventType {
+  START = 'START',
+  STARTED = 'STARTED',
+  RESULT = 'RESULT',
+  ERROR = 'ERROR',
+  PR_CREATED = 'PR_CREATED',
+  DISPATCH_REQUEST = 'DISPATCH_REQUEST',
+  ACCEPT = 'ACCEPT',
+  REWORK = 'REWORK',
+  ACK = 'ACK',
+}

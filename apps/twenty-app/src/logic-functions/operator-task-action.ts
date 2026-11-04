@@ -2,20 +2,21 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction } from 'twenty-sdk/define';
 
 import { OPERATOR_TASK_ACTION_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
+import { OperatorTaskAction } from 'src/types/operator-task-action';
 import { assertOperatorMember } from 'src/utils/assert-operator-member.util';
 import { reviewTask } from 'src/utils/review-task.util';
 import { submitTask } from 'src/utils/submit-task.util';
 
 type TaskActionPayload = {
   taskId: string;
-  action: 'SUBMIT' | 'ACCEPT' | 'REWORK';
+  action: OperatorTaskAction;
 };
 
 const handler = async (
   { taskId, action }: TaskActionPayload,
   context: { workspaceMemberId: string | null },
 ) => {
-  if (!taskId || !['SUBMIT', 'ACCEPT', 'REWORK'].includes(action)) {
+  if (!taskId || !Object.values(OperatorTaskAction).includes(action)) {
     throw new Error('A task and supported operator action are required.');
   }
   await assertOperatorMember(context.workspaceMemberId);
@@ -46,7 +47,7 @@ const handler = async (
   const task = (response as any).aiTasks?.edges?.[0]?.node;
   if (!task) throw new Error('Task was not found.');
 
-  if (action === 'SUBMIT') return submitTask(client, task);
+  if (action === OperatorTaskAction.SUBMIT) return submitTask(client, task);
   return reviewTask(client, task, action, context.workspaceMemberId as string);
 };
 

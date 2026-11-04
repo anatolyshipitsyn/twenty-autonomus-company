@@ -11,6 +11,7 @@ import {
   REWORK_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
   REWORK_TRIGGER_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { OperatorTaskAction } from 'src/types/operator-task-action';
 
 export default defineWorkflow({
   universalIdentifier: REWORK_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
@@ -32,7 +33,7 @@ export default defineWorkflow({
         name: 'Validate and authorize rework',
         type: 'LOGIC_FUNCTION',
         logicFunctionUniversalIdentifier: OPERATOR_TASK_ACTION_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
-        input: { taskId: '{{trigger.payload.id}}', action: 'REWORK' },
+        input: { taskId: '{{trigger.payload.id}}', action: OperatorTaskAction.REWORK },
         nextStepIds: [],
       },
     ],

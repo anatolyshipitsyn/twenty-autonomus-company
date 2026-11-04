@@ -1,6 +1,6 @@
 # Workflows и протокол исполнения
 
-Версия: 1.7 · Дата: 2 ноября 2026 · Статус: предлагаемый NestJS/Codex App Server adapter-контракт; не проверено.
+Версия: 1.8 · Дата: 4 ноября 2026 · Статус: контракт Journal для этапа 5; worker ещё не реализован/проверен.
 
 [English version](protocol.md) · [Все требования](../requirements.ru.md) · [PRD](../PRD.ru.md)
 
@@ -17,7 +17,23 @@
 
 Dispatch запускается одиночным worker poller, не расписанием Twenty. Worker не подаёт следующую заявку до подтверждённого результата текущей; неизвестный исход оставляет очередь заблокированной. Recovery monitor остаётся отдельным scheduled workflow будущего объёма.
 
-Для MVP `runKey = taskId:requestVersion`. Ключ запроса `DISPATCH_REQUEST` — `<runKey>:DISPATCH_REQUEST`; запрос содержит `taskId`, `runKey`, а `payload.requestVersion` должен совпадать с текущей версией задачи. Ключи событий Worker имеют вид `<runKey>:<eventType>` и остаются теми же при повторной доставке; событие несёт `taskId`, `runId`, `runKey` и `payload.requestVersion`. `RESULT` дополнительно содержит `resultSummary`, `prUrl`, `headCommit` и `evidence` с `draftPr: true` и непустым массивом успешных обязательных проверок. Переходы отклоняют несовпадение ключей или версии.
+#### Контракт Journal v1 (schema приложения `autonomus-company` 0.1.0, Twenty SDK 2.54.3)
+
+Используются реальные поля `AiRunJournal`: `taskId` (обязательная связь), `runId` (nullable связь), `runKey`, `operationKey`, `direction` (`INBOUND`/`OUTBOUND`), `eventType`, `state` (`PENDING`/`APPLIED`/`REJECTED`/`FAILED`), `payload` (RAW_JSON), `result` (RAW_JSON), `receivedAt`, `appliedAt`. `AiRun` содержит `taskId`, `requestVersion`, `runKey`, `status`, `snapshot`, `threadId`, `turnId`, `resultSummary`, `evidence`, `prUrl`, `headCommit`, `startedAt`, `finishedAt`. Версия данных задачи — `AiTask.requestVersion`; версия протокола — это версия данного контракта (`protocolVersion: 1` внутри каждого payload). Поле `protocolVersion` не отдельная колонка.
+
+| Запись | Направление / ключ | Обязательные поля | Payload |
+| --- | --- | --- | --- |
+| Запрос `DISPATCH_REQUEST` | `INBOUND`, `operationKey=<runKey>:DISPATCH_REQUEST`, `runKey=<taskId>:<requestVersion>`, `taskId`, `runId=null`, `state=PENDING` | `taskId`, `runKey`, `operationKey`, `direction`, `eventType`, `state`, `receivedAt` | `{protocolVersion:1, requestVersion}` |
+| Команда `START` | `OUTBOUND`, `operationKey=<runKey>:START`, те же `taskId`, `runId`, `runKey`, `state=PENDING` | те же базовые поля; `runId` указывает на созданный AiRun | `{protocolVersion:1, requestVersion, snapshot}`; snapshot копируется из `AiRun.snapshot` |
+| Событие `STARTED` | `INBOUND`, `operationKey=<runKey>:STARTED`, те же три ID/ключа, `state=PENDING` | базовые поля, `runId` обязателен | `{protocolVersion:1, requestVersion, threadId, turnId}`; оба ID — непустые строки |
+| Событие `RESULT` | `INBOUND`, `operationKey=<runKey>:RESULT`, те же три ID/ключа, `state=PENDING` | базовые поля, `runId` обязателен | `{protocolVersion:1, requestVersion, resultSummary, evidence, prUrl?, headCommit?}`; `evidence.draftPr=true`, `evidence.checks` — непустой массив, каждый элемент имеет `passed=true`; `prUrl`/`headCommit` можно опустить только если ранее сохранены событием `PR_CREATED` |
+| Событие `ERROR` | `INBOUND`, `operationKey=<runKey>:ERROR`, те же три ID/ключа, `state=PENDING` | базовые поля, `runId` обязателен | `{protocolVersion:1, requestVersion, message}`; непустое сообщение Worker, сохраняемое в пределах 4000 символов |
+
+`runKey` детерминирован: `<taskId>:<requestVersion>`. `requestVersion` — целое число, равное актуальному `AiTask.requestVersion`; новый run появляется только после операторского изменения задачи, увеличивающего эту версию. У каждого вида сообщения свой стабильный `operationKey`; повторная доставка использует тот же ключ и те же поля/payload. Неизменяемость payload после первой записи обязательна по протоколу. `ERROR.message` обязателен; приложение сохраняет не более 4000 символов.
+
+**ACK:** отдельная строка `eventType=ACK` не создаётся: у schema нет отдельного ACK code/status поля. Worker подтверждает чтение команды её сохранённым состоянием и `result`. Обработчик завершает входную запись как `APPLIED` или `REJECTED` и сохраняет JSON в `result`; для `DISPATCH_REQUEST` успешный ACK имеет форму `{runKey, runId, startOperationKey}`, отказ — `{reason, ...diagnostic fields}`. Применение Worker-события отвечает `{applied, runKey}` либо `{reason}`. `FAILED`/оставшийся `PENDING` не являются успешным ACK; после сетевой ошибки Worker перечитывает ту же запись по `operationKey` и не отправляет новую команду/событие с другим ключом.
+
+Повтор `DISPATCH_REQUEST` сначала разрешается по существующему `runKey`. Уникальный индекс `AiRun.runKey` служит последним барьером при одновременной доставке; уникальный `AiRunJournal.operationKey` дедуплицирует повтор той же заявки. При неизвестном результате create Worker/workflow перечитывает запись и Run по прежним ключам. Новый `AiRun` нельзя создавать с новым `runKey` для повтора этой заявки. Эти правила соответствуют текущему обработчику `applyDispatchRequest`; реальная интеграционная проверка Stage 5 ещё нужна.
 
 ### Операции Journal
 

@@ -1,6 +1,6 @@
 # Workflows and execution protocol
 
-Version: 1.7 · Date: 2 November 2026 · Status: proposed NestJS/Codex App Server adapter contract; not verified.
+Version: 1.8 · Date: 4 November 2026 · Status: Stage 5 Journal contract; Worker is not implemented/verified yet.
 
 [Русская версия](protocol.ru.md) · [All requirements](../requirements.md) · [PRD](../PRD.md)
 
@@ -17,7 +17,23 @@ Version: 1.7 · Date: 2 November 2026 · Status: proposed NestJS/Codex App Serve
 
 Dispatch is driven by one Worker poller, not a Twenty schedule. The Worker submits no next request until the current run has a confirmed outcome; an unknown outcome keeps the queue blocked. Recovery monitor remains a separate scheduled workflow for later scope.
 
-For the MVP, `runKey = taskId:requestVersion`. The `DISPATCH_REQUEST` key is `<runKey>:DISPATCH_REQUEST`; the request contains `taskId`, `runKey`, and `payload.requestVersion`, which must match the task's current version. Worker event keys are `<runKey>:<eventType>` and remain stable on redelivery; events carry `taskId`, `runId`, `runKey`, and `payload.requestVersion`. `RESULT` also contains `resultSummary`, `prUrl`, `headCommit`, and `evidence` with `draftPr: true` and a non-empty set of passing mandatory checks. Transitions reject mismatched keys or versions.
+#### Journal contract v1 (app schema `autonomus-company` 0.1.0, Twenty SDK 2.54.3)
+
+The actual `AiRunJournal` fields are `taskId` (required relation), `runId` (nullable relation), `runKey`, `operationKey`, `direction` (`INBOUND`/`OUTBOUND`), `eventType`, `state` (`PENDING`/`APPLIED`/`REJECTED`/`FAILED`), `payload` (RAW_JSON), `result` (RAW_JSON), `receivedAt`, and `appliedAt`. `AiRun` has `taskId`, `requestVersion`, `runKey`, `status`, `snapshot`, `threadId`, `turnId`, `resultSummary`, `evidence`, `prUrl`, `headCommit`, `startedAt`, and `finishedAt`. Data version is `AiTask.requestVersion`; protocol version is this contract version (`protocolVersion: 1` in each payload), not a separate column.
+
+| Record | Direction / key | Required fields | Payload |
+| --- | --- | --- | --- |
+| `DISPATCH_REQUEST` request | `INBOUND`, `operationKey=<runKey>:DISPATCH_REQUEST`, `runKey=<taskId>:<requestVersion>`, `taskId`, `runId=null`, `state=PENDING` | `taskId`, `runKey`, `operationKey`, `direction`, `eventType`, `state`, `receivedAt` | `{protocolVersion:1, requestVersion}` |
+| `START` command | `OUTBOUND`, `operationKey=<runKey>:START`, same `taskId`, `runId`, `runKey`, `state=PENDING` | Same base fields; `runId` points to the created AiRun | `{protocolVersion:1, requestVersion, snapshot}`; snapshot is copied from `AiRun.snapshot` |
+| `STARTED` event | `INBOUND`, `operationKey=<runKey>:STARTED`, same three IDs/keys, `state=PENDING` | Base fields; `runId` required | `{protocolVersion:1, requestVersion, threadId, turnId}`; both IDs are non-empty strings |
+| `RESULT` event | `INBOUND`, `operationKey=<runKey>:RESULT`, same three IDs/keys, `state=PENDING` | Base fields; `runId` required | `{protocolVersion:1, requestVersion, resultSummary, evidence, prUrl?, headCommit?}`; `evidence.draftPr=true`; `evidence.checks` is non-empty and every item has `passed=true`; `prUrl`/`headCommit` may be omitted only when already saved by `PR_CREATED` |
+| `ERROR` event | `INBOUND`, `operationKey=<runKey>:ERROR`, same three IDs/keys, `state=PENDING` | Base fields; `runId` required | `{protocolVersion:1, requestVersion, message}`; non-empty Worker message, stored up to 4,000 characters |
+
+`runKey` is deterministic: `<taskId>:<requestVersion>`. `requestVersion` is an integer equal to current `AiTask.requestVersion`; a new run is allowed only after an Operator action changes the task and increments that version. Each message type has its own stable `operationKey`; redelivery uses the same key and identical fields/payload. Payload is immutable after first write by protocol. `ERROR.message` is required; the app stores up to 4,000 characters.
+
+**ACK:** no separate `eventType=ACK` record is created; the schema has no dedicated ACK code/status field. Worker acknowledges a command by reading its persisted state and `result`. The handler completes an inbound record as `APPLIED` or `REJECTED` and stores JSON in `result`; successful `DISPATCH_REQUEST` ACK is `{runKey, runId, startOperationKey}`, rejection is `{reason, ...diagnostic fields}`. Applied Worker-event ACK is `{applied, runKey}` or `{reason}`. `FAILED` or remaining `PENDING` is not a successful ACK. After a network error, Worker rereads the same record by `operationKey` and does not submit a new command/event under a different key.
+
+A repeated `DISPATCH_REQUEST` resolves through the existing `runKey` first. The unique `AiRun.runKey` index is the final guard during concurrent delivery; unique `AiRunJournal.operationKey` deduplicates redelivery of the same request. On an unknown create outcome, the Worker/workflow rereads the record and Run using the original keys. It must not create another `AiRun` with a new `runKey` to retry that request. These rules match the current `applyDispatchRequest` handler; Stage 5 integration verification remains outstanding.
 
 ### Journal operations
 

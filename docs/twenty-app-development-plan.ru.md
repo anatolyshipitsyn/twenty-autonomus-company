@@ -125,7 +125,7 @@
 
 ### Этап 5. Согласовать контракт с worker и подключить минимальный цикл
 
-- [ ] Зафиксировать точные поля и payload `DISPATCH_REQUEST`/START/STARTED/RESULT/ERROR, operationKey/runKey, версии и ACK по реальной schema приложения; повтор запроса не должен создавать второй run.
+- [x] Зафиксировать точные поля и payload `DISPATCH_REQUEST`/START/STARTED/RESULT/ERROR, operationKey/runKey, версии и ACK по реальной schema приложения; повтор запроса не должен создавать второй run.
 - [ ] Подтвердить, что worker читает только сохранённые разрешённые команды через поддерживаемый API Twenty; прямой SQL запрещён.
 - [ ] Проверить запуск одного разрешённого run и запись `STARTED` с threadId/turnId до применения RUNNING.
 - [ ] Проверить результат: worker сначала сохраняет evidence, summary, draft PR URL/headCommit, затем RESULT; Twenty переводит задачу в WAITING/REVIEW.

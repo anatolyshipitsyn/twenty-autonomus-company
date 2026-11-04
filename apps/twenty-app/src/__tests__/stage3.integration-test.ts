@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AiRunJournalDirection } from 'src/types/ai-run-journal-direction';
+import { AiRunJournalEventType } from 'src/types/ai-run-journal-event-type';
+import { AiRunJournalState } from 'src/types/ai-run-journal-state';
+import { AiRunStatus } from 'src/types/ai-run-status';
 
 type GraphqlResult<T> = {
   data?: T;
@@ -136,7 +140,7 @@ describe('Stage 3 worker journal contract', () => {
         `mutation CreateRun($data: AiRunCreateInput!) {
           createAiRun(data: $data) { id }
         }`,
-        { data: { runKey, taskId, status: 'PENDING' } },
+        { data: { runKey, taskId, status: AiRunStatus.PENDING } },
         adminToken,
       ),
     );
@@ -148,7 +152,7 @@ describe('Stage 3 worker journal contract', () => {
         `mutation CreateTerminalRun($data: AiRunCreateInput!) {
           createAiRun(data: $data) { id }
         }`,
-        { data: { runKey: terminalRunKey, taskId, status: 'SUCCEEDED' } },
+        { data: { runKey: terminalRunKey, taskId, status: AiRunStatus.SUCCEEDED } },
         adminToken,
       ),
     );
@@ -199,7 +203,7 @@ describe('Stage 3 worker journal contract', () => {
   });
 
   it('allows Worker Journal writes and verifies operation-key conflicts', async () => {
-    const originalPayload = { event: 'STARTED', detail: 'first delivery' };
+    const originalPayload = { event: AiRunJournalEventType.STARTED, detail: 'first delivery' };
     const shareWithWorkerReadOnly = [
       { roleId: workerRoleId, accessLevel: 'READ' },
     ];
@@ -216,9 +220,9 @@ describe('Stage 3 worker journal contract', () => {
           runKey,
           taskId,
           runId,
-          direction: 'INBOUND',
-          eventType: 'STARTED',
-          state: 'PENDING',
+          direction: AiRunJournalDirection.INBOUND,
+          eventType: AiRunJournalEventType.STARTED,
+          state: AiRunJournalState.PENDING,
           payload: originalPayload,
         },
       },
@@ -238,9 +242,9 @@ describe('Stage 3 worker journal contract', () => {
           runKey,
           taskId,
           runId,
-          direction: 'INBOUND',
-          eventType: 'STARTED',
-          state: 'PENDING',
+          direction: AiRunJournalDirection.INBOUND,
+          eventType: AiRunJournalEventType.STARTED,
+          state: AiRunJournalState.PENDING,
           payload: originalPayload,
         },
       },
@@ -259,10 +263,10 @@ describe('Stage 3 worker journal contract', () => {
           runKey,
           taskId,
           runId,
-          direction: 'INBOUND',
-          eventType: 'STARTED',
-          state: 'PENDING',
-          payload: { event: 'STARTED', detail: 'conflicting delivery' },
+          direction: AiRunJournalDirection.INBOUND,
+          eventType: AiRunJournalEventType.STARTED,
+          state: AiRunJournalState.PENDING,
+          payload: { event: AiRunJournalEventType.STARTED, detail: 'conflicting delivery' },
         },
       },
       workerApiKey,
@@ -298,10 +302,10 @@ describe('Stage 3 worker journal contract', () => {
             runKey: terminalRunKey,
             taskId,
             runId: terminalRunId,
-            direction: 'INBOUND',
-            eventType: 'RESULT',
-            state: 'APPLIED',
-            payload: { event: 'RESULT', detail: 'already applied' },
+            direction: AiRunJournalDirection.INBOUND,
+            eventType: AiRunJournalEventType.RESULT,
+            state: AiRunJournalState.APPLIED,
+            payload: { event: AiRunJournalEventType.RESULT, detail: 'already applied' },
           },
           shareWith: shareWithWorkerReadOnly,
         },
@@ -317,7 +321,7 @@ describe('Stage 3 worker journal contract', () => {
       }`,
       {
         id: appliedJournalId,
-        data: { state: 'FAILED', payload: { detail: 'worker rewrite' } },
+        data: { state: AiRunJournalState.FAILED, payload: { detail: 'worker rewrite' } },
       },
       workerApiKey,
     );
@@ -335,7 +339,7 @@ describe('Stage 3 worker journal contract', () => {
         adminToken,
       ),
     );
-    expect(appliedAfterRewrite.aiRunJournal.state).toBe('FAILED');
+    expect(appliedAfterRewrite.aiRunJournal.state).toBe(AiRunJournalState.FAILED);
     expect(appliedAfterRewrite.aiRunJournal.payload).toEqual({
       detail: 'worker rewrite',
     });
@@ -345,7 +349,7 @@ describe('Stage 3 worker journal contract', () => {
       `mutation RewriteTerminalRun($id: UUID!, $data: AiRunUpdateInput!) {
         updateAiRun(id: $id, data: $data) { id }
       }`,
-      { id: terminalRunId, data: { status: 'ERROR' } },
+      { id: terminalRunId, data: { status: AiRunStatus.ERROR } },
       workerApiKey,
     );
     expect(runRewrite.errors).toBeDefined();
@@ -360,6 +364,6 @@ describe('Stage 3 worker journal contract', () => {
         adminToken,
       ),
     );
-    expect(terminalRunAfterRewrite.aiRun.status).toBe('SUCCEEDED');
+    expect(terminalRunAfterRewrite.aiRun.status).toBe(AiRunStatus.SUCCEEDED);
   });
 });
