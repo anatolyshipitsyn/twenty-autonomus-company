@@ -14,7 +14,7 @@ import {
 
 export default defineWorkflow({
   universalIdentifier: SUBMIT_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
-  name: 'Orchestrator: submit AI task',
+  name: 'Передать оркестратору',
   version: {
     trigger: {
       universalIdentifier: TASK_ACTION_TRIGGER_UNIVERSAL_IDENTIFIER,
