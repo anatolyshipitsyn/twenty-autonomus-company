@@ -14,7 +14,7 @@ import {
 
 export default defineWorkflow({
   universalIdentifier: REWORK_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
-  name: 'Orchestrator: return AI task for rework',
+  name: 'Вернуть на доработку / разрешить повтор',
   version: {
     trigger: {
       universalIdentifier: REWORK_TRIGGER_UNIVERSAL_IDENTIFIER,

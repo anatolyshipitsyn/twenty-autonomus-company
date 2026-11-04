@@ -14,7 +14,7 @@ import {
 
 export default defineWorkflow({
   universalIdentifier: ACCEPT_TASK_WORKFLOW_UNIVERSAL_IDENTIFIER,
-  name: 'Orchestrator: accept AI task result',
+  name: 'Принять результат',
   version: {
     trigger: {
       universalIdentifier: ACCEPT_TRIGGER_UNIVERSAL_IDENTIFIER,
